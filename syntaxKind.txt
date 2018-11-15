@@ -1,0 +1,4 @@
+Syntax.kind numbers
+ts.SyntaxKind.VariableStatement: 213
+ts.SyntaxKind.VariableDeclarationList: 232
+ts.SyntaxKind.VariableDeclaration: 231

@@ -1,0 +1,1 @@
+const words:string[] = ["one", "two", "three"];

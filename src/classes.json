@@ -1,0 +1,21 @@
+[
+    {
+        "name": "C",
+        "type": "typeof C",
+        "constructors": [
+            {
+                "parameters": [
+                    {
+                        "name": "a",
+                        "type": "string"
+                    },
+                    {
+                        "name": "b",
+                        "type": "C"
+                    }
+                ],
+                "returnType": "C"
+            }
+        ]
+    }
+]

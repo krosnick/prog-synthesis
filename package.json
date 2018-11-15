@@ -1,0 +1,17 @@
+{
+  "name": "typechecker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+  },
+  "author": "",
+  "dependencies": {
+    "typescript": "^2.9.2"
+  },
+  "devDependencies": {
+    "@types/node": "^10.12.7",
+    "ts-loader": "^4.4.2",
+    "ts-node": "^7.0.0"
+  }
+}
