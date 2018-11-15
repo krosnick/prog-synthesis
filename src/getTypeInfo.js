@@ -28,6 +28,7 @@ function generateDocumentation(fileNames, options) {
             return;
         }
         if (ts.isClassDeclaration(node) && node.name) {
+            //console.log(node);
             //console.log("isClassDeclaration");
             // This is a top level class, get its symbol
             var symbol = checker.getSymbolAtLocation(node.name);
@@ -41,22 +42,37 @@ function generateDocumentation(fileNames, options) {
             // cannot be exported
         }
         else if (ts.isModuleDeclaration(node)) {
-            console.log("isModuleDeclaration");
+            //console.log("isModuleDeclaration");
             // This is a namespace, visit its children
             //console.log(node);
             //ts.forEachChild(node, visit);
-        } /*else if(ts.isMethodDeclaration(node)){
-          console.log("isMethodDeclaration");
-          //console.log("isMethodDeclaration");
-          //console.log(node);
-        }*/
+        }
+        else if (ts.isVariableStatement(node)) {
+            //console.log(node);
+            // Process variable statements (e.g., for example input/output code)
+            // Create a "serializeVariable" method?
+            //console.log(node);
+            //console.log(node.declarationList.declarations[0].name);
+            //let symbol = checker.getSymbolAtLocation(node.parent);
+            var symbol = checker.getSymbolAtLocation(node.declarationList.declarations[0].name);
+            output.push(serializeVariable(symbol));
+        }
         else {
-            console.log("else");
-            console.log(node);
-            console.log("node.kind: " + node.kind);
-            console.log("ts.SyntaxKind.VariableStatement: " + ts.SyntaxKind.VariableStatement);
+            /*else if(ts.isMethodDeclaration(node)){
+              console.log("isMethodDeclaration");
+              //console.log("isMethodDeclaration");
+              //console.log(node);
+            }*/
+            //console.log("ts.isVariableDeclaration(node): " + ts.isVariableDeclaration(node));
+            //console.log("node.kind === ts.SyntaxKind.TypeAliasDeclaration): " + (node.kind === ts.SyntaxKind.TypeAliasDeclaration));
+            //console.log("else");
+            console.log("ts.SyntaxKind[node.kind]: " + (ts.SyntaxKind[node.kind]));
+            //console.log(node);
+            //console.log("node.kind: " + node.kind);
+            //console.log("ts.SyntaxKind[236]: " + ts.SyntaxKind[236]);
+            /*console.log("ts.SyntaxKind.VariableStatement: " + ts.SyntaxKind.VariableStatement);
             console.log("ts.SyntaxKind.VariableDeclarationList: " + ts.SyntaxKind.VariableDeclarationList);
-            console.log("ts.SyntaxKind.VariableDeclaration: " + ts.SyntaxKind.VariableDeclaration);
+            console.log("ts.SyntaxKind.VariableDeclaration: " + ts.SyntaxKind.VariableDeclaration);*/
             //console.log("testing123");
             //console.log(node.getChildren());
             //ts.forEachChild(node, visit);
@@ -75,6 +91,16 @@ function generateDocumentation(fileNames, options) {
             /*documentation: ts.displayPartsToString(symbol.getDocumentationComment()),*/
             type: checker.typeToString(checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration))
         };
+    }
+    function serializeVariable(symbol) {
+        var symbolDetails = serializeSymbol(symbol);
+        var symType = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration);
+        //console.log(symType);
+        symbolDetails.signatureInfo = symType
+            .getCallSignatures()
+            .map(serializeSignature);
+        //console.log(symbolDetails);
+        return symbolDetails;
     }
     /** Serialize a class symbol information */
     function serializeClass(symbol) {
