@@ -46,7 +46,7 @@ function generateDocumentation(
     if (!isNodeExported(node)) {
       return;
     }
-    
+
     if (ts.isClassDeclaration(node) && node.name) {
       //console.log(node);
       //console.log("isClassDeclaration");
@@ -65,7 +65,7 @@ function generateDocumentation(
       // This is a namespace, visit its children
       //console.log(node);
       //ts.forEachChild(node, visit);
-    }else if(ts.isVariableStatement(node)){
+    } else if(ts.isVariableStatement(node)){
       //console.log(node);
       // Process variable statements (e.g., for example input/output code)
         // Create a "serializeVariable" method?
@@ -74,7 +74,12 @@ function generateDocumentation(
         //let symbol = checker.getSymbolAtLocation(node.parent);
         let symbol = checker.getSymbolAtLocation(node.declarationList.declarations[0].name);
         output.push(serializeVariable(symbol));
-    }else{
+    } else if(ts.isFunctionDeclaration(node)) {
+      // console.log(node.name)
+      let symbol = checker.getSymbolAtLocation(node.name)
+      let list = serializeFunction(symbol);
+      list.forEach(function(item) { output.push(item) })
+    } else{
     /*else if(ts.isMethodDeclaration(node)){
       console.log("isMethodDeclaration");
       //console.log("isMethodDeclaration");
@@ -83,8 +88,8 @@ function generateDocumentation(
       //console.log("ts.isVariableDeclaration(node): " + ts.isVariableDeclaration(node));
       //console.log("node.kind === ts.SyntaxKind.TypeAliasDeclaration): " + (node.kind === ts.SyntaxKind.TypeAliasDeclaration));
       //console.log("else");
-      console.log("ts.SyntaxKind[node.kind]: " + (ts.SyntaxKind[node.kind]));
-      
+      // console.log("ts.SyntaxKind[node.kind]: " + (ts.SyntaxKind[node.kind]));
+
       //console.log(node);
       //console.log("node.kind: " + node.kind);
       //console.log("ts.SyntaxKind[236]: " + ts.SyntaxKind[236]);
@@ -115,7 +120,7 @@ function generateDocumentation(
   }
 
   function serializeVariable(symbol: ts.Symbol){
-    
+
     let symbolDetails = serializeSymbol(symbol);
     let symType = checker.getTypeOfSymbolAtLocation(
       symbol,
@@ -128,16 +133,37 @@ function generateDocumentation(
 
     //console.log(symbolDetails);
     return symbolDetails;
-      
+
+  }
+
+  function serializeFunction(symbol: ts.Symbol) {
+    let detailsList = [];
+    let symbolDetails = serializeSymbol(symbol);
+    let symType = checker.getTypeOfSymbolAtLocation(
+      symbol,
+      symbol.valueDeclaration!
+    );
+
+    const sigInfo:DocEntry[] = symType
+      .getCallSignatures()
+      .map(serializeSignature);
+
+    if(sigInfo.length > 0){
+      symbolDetails.signatureInfo = sigInfo;
+    }
+
+    detailsList.push(symbolDetails);
+
+    return detailsList;
   }
 
   /** Serialize a class symbol information */
   function serializeClass(symbol: ts.Symbol) {
-    
+
     let detailsList = [];
-    
+
     // Get the construct signatures
-    
+
     // Constructor
     let constructorDetails = serializeSymbol(symbol);
     // Get the construct signatures
@@ -167,7 +193,7 @@ function generateDocumentation(
             isPublic = false;
           }
         }
-        
+
         if(isPublic){
           let symbolDetails = serializeSymbol(thisSymbol);
           let symType = checker.getTypeOfSymbolAtLocation(

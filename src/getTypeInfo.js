@@ -57,6 +57,12 @@ function generateDocumentation(fileNames, options) {
             var symbol = checker.getSymbolAtLocation(node.declarationList.declarations[0].name);
             output.push(serializeVariable(symbol));
         }
+        else if (ts.isFunctionDeclaration(node)) {
+            // console.log(node.name)
+            var symbol = checker.getSymbolAtLocation(node.name);
+            var list = serializeFunction(symbol);
+            list.forEach(function (item) { output.push(item); });
+        }
         else {
             /*else if(ts.isMethodDeclaration(node)){
               console.log("isMethodDeclaration");
@@ -66,7 +72,7 @@ function generateDocumentation(fileNames, options) {
             //console.log("ts.isVariableDeclaration(node): " + ts.isVariableDeclaration(node));
             //console.log("node.kind === ts.SyntaxKind.TypeAliasDeclaration): " + (node.kind === ts.SyntaxKind.TypeAliasDeclaration));
             //console.log("else");
-            console.log("ts.SyntaxKind[node.kind]: " + (ts.SyntaxKind[node.kind]));
+            // console.log("ts.SyntaxKind[node.kind]: " + (ts.SyntaxKind[node.kind]));
             //console.log(node);
             //console.log("node.kind: " + node.kind);
             //console.log("ts.SyntaxKind[236]: " + ts.SyntaxKind[236]);
@@ -101,6 +107,19 @@ function generateDocumentation(fileNames, options) {
             .map(serializeSignature);
         //console.log(symbolDetails);
         return symbolDetails;
+    }
+    function serializeFunction(symbol) {
+        var detailsList = [];
+        var symbolDetails = serializeSymbol(symbol);
+        var symType = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration);
+        var sigInfo = symType
+            .getCallSignatures()
+            .map(serializeSignature);
+        if (sigInfo.length > 0) {
+            symbolDetails.signatureInfo = sigInfo;
+        }
+        detailsList.push(symbolDetails);
+        return detailsList;
     }
     /** Serialize a class symbol information */
     function serializeClass(symbol) {
