@@ -1,16 +1,18 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const ts = require("typescript");
-const fs = require("fs");
+// From https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
+exports.__esModule = true;
+var ts = require("typescript");
+var fs = require("fs");
 /** Generate documentation for all classes in a set of .ts files */
 function generateDocumentation(fileNames, options) {
     // Build a program using the set of root file names in fileNames
-    let program = ts.createProgram(fileNames, options);
+    var program = ts.createProgram(fileNames, options);
     // Get the checker, we will use it to find more about classes
-    let checker = program.getTypeChecker();
-    let output = [];
+    var checker = program.getTypeChecker();
+    var output = [];
     // Visit every sourceFile in the program
-    for (const sourceFile of program.getSourceFiles()) {
+    for (var _i = 0, _a = program.getSourceFiles(); _i < _a.length; _i++) {
+        var sourceFile = _a[_i];
         if (!sourceFile.isDeclarationFile) {
             // Walk the tree to search for classes
             ts.forEachChild(sourceFile, visit);
@@ -27,7 +29,7 @@ function generateDocumentation(fileNames, options) {
         }
         if (ts.isClassDeclaration(node) && node.name) {
             // This is a top level class, get its symbol
-            let symbol = checker.getSymbolAtLocation(node.name);
+            var symbol = checker.getSymbolAtLocation(node.name);
             if (symbol) {
                 output.push(serializeClass(symbol));
             }
@@ -49,9 +51,9 @@ function generateDocumentation(fileNames, options) {
     }
     /** Serialize a class symbol information */
     function serializeClass(symbol) {
-        let details = serializeSymbol(symbol);
+        var details = serializeSymbol(symbol);
         // Get the construct signatures
-        let constructorType = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration);
+        var constructorType = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration);
         details.constructors = constructorType
             .getConstructSignatures()
             .map(serializeSignature);
@@ -75,4 +77,3 @@ generateDocumentation(process.argv.slice(2), {
     target: ts.ScriptTarget.ES5,
     module: ts.ModuleKind.CommonJS
 });
-//# sourceMappingURL=docGenerator.js.map
