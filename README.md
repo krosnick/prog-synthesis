@@ -1,5 +1,6 @@
 # prog-synthesis
 
+
 cd to src
 
 node getTypeInfo.js <file-to-parse.ts>
