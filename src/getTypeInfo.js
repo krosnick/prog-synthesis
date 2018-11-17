@@ -1,4 +1,5 @@
 "use strict";
+// Adapted from https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
 exports.__esModule = true;
 var ts = require("typescript");
 /** Generate documentation for all classes in a set of .ts files */
@@ -72,7 +73,7 @@ function generateDocumentation(fileNames, options) {
             //console.log("ts.isVariableDeclaration(node): " + ts.isVariableDeclaration(node));
             //console.log("node.kind === ts.SyntaxKind.TypeAliasDeclaration): " + (node.kind === ts.SyntaxKind.TypeAliasDeclaration));
             //console.log("else");
-            // console.log("ts.SyntaxKind[node.kind]: " + (ts.SyntaxKind[node.kind]));
+            //console.log("ts.SyntaxKind[node.kind]: " + (ts.SyntaxKind[node.kind]));
             //console.log(node);
             //console.log("node.kind: " + node.kind);
             //console.log("ts.SyntaxKind[236]: " + ts.SyntaxKind[236]);
@@ -92,6 +93,7 @@ function generateDocumentation(fileNames, options) {
     /** Serialize a symbol into a json object */
     function serializeSymbol(symbol) {
         //console.log(symbol);
+        //console.log(checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration!).);
         return {
             name: symbol.getName(),
             /*documentation: ts.displayPartsToString(symbol.getDocumentationComment()),*/
@@ -105,6 +107,7 @@ function generateDocumentation(fileNames, options) {
         symbolDetails.signatureInfo = symType
             .getCallSignatures()
             .map(serializeSignature);
+        //console.log(symbolDetails.signatureInfo);
         //console.log(symbolDetails);
         return symbolDetails;
     }
@@ -132,6 +135,7 @@ function generateDocumentation(fileNames, options) {
         constructorDetails.constructors = constructorType
             .getConstructSignatures()
             .map(serializeSignature);
+        console.log(constructorDetails.constructors);
         detailsList.push(constructorDetails);
         // Methods + properties
         var iter = symbol.members.keys();
@@ -154,6 +158,7 @@ function generateDocumentation(fileNames, options) {
                     var sigInfo = symType
                         .getCallSignatures()
                         .map(serializeSignature);
+                    console.log(sigInfo[0]);
                     if (sigInfo.length > 0) {
                         symbolDetails.signatureInfo = sigInfo;
                     }

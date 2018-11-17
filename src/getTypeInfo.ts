@@ -1,3 +1,5 @@
+// Adapted from https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
+
 import * as ts from "typescript";
 //import * as fs from "fs";
 
@@ -17,6 +19,8 @@ function generateDocumentation(
   fileNames: string[],
   options: ts.CompilerOptions
 ): DocEntry[] {
+
+
   // Build a program using the set of root file names in fileNames
   let program = ts.createProgram(fileNames, options);
 
@@ -88,8 +92,7 @@ function generateDocumentation(
       //console.log("ts.isVariableDeclaration(node): " + ts.isVariableDeclaration(node));
       //console.log("node.kind === ts.SyntaxKind.TypeAliasDeclaration): " + (node.kind === ts.SyntaxKind.TypeAliasDeclaration));
       //console.log("else");
-      // console.log("ts.SyntaxKind[node.kind]: " + (ts.SyntaxKind[node.kind]));
-
+      //console.log("ts.SyntaxKind[node.kind]: " + (ts.SyntaxKind[node.kind]));
       //console.log(node);
       //console.log("node.kind: " + node.kind);
       //console.log("ts.SyntaxKind[236]: " + ts.SyntaxKind[236]);
@@ -110,6 +113,8 @@ function generateDocumentation(
   /** Serialize a symbol into a json object */
   function serializeSymbol(symbol: ts.Symbol): DocEntry {
     //console.log(symbol);
+
+    //console.log(checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration!).);
     return {
       name: symbol.getName(),
       /*documentation: ts.displayPartsToString(symbol.getDocumentationComment()),*/
@@ -130,6 +135,7 @@ function generateDocumentation(
     symbolDetails.signatureInfo = symType
       .getCallSignatures()
       .map(serializeSignature);
+    //console.log(symbolDetails.signatureInfo);
 
     //console.log(symbolDetails);
     return symbolDetails;
@@ -175,6 +181,8 @@ function generateDocumentation(
       .getConstructSignatures()
       .map(serializeSignature);
 
+    console.log(constructorDetails.constructors);
+
     detailsList.push(constructorDetails);
 
     // Methods + properties
@@ -204,6 +212,7 @@ function generateDocumentation(
           const sigInfo:DocEntry[] = symType
             .getCallSignatures()
             .map(serializeSignature);
+            console.log(sigInfo[0]);
 
           if(sigInfo.length > 0){
             symbolDetails.signatureInfo = sigInfo;

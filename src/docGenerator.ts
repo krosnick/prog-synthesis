@@ -1,3 +1,5 @@
+// From https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
+
 import * as ts from "typescript";
 import * as fs from "fs";
 
