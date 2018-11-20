@@ -1,7 +1,7 @@
 /**
  * Documentation for C
  */
-class C {
+export class C {
     /**
      * constructor documentation
      * @param a my parameter documentation

@@ -33,9 +33,9 @@ function generateDocumentation(
   for (const sourceFile of program.getSourceFiles()) {
     if (!sourceFile.isDeclarationFile) {
       // Walk the tree to search for classes
-      ts.forEachChild(sourceFile, visit);
+      //ts.forEachChild(sourceFile, visit);
     }
-    //ts.forEachChild(sourceFile, visit);
+    ts.forEachChild(sourceFile, visit);
   }
 
   console.log(output);
@@ -83,7 +83,15 @@ function generateDocumentation(
       let symbol = checker.getSymbolAtLocation(node.name)
       let list = serializeFunction(symbol);
       list.forEach(function(item) { output.push(item) })
-    } else{
+    } else if(ts.isInterfaceDeclaration(node)){
+      let symbol = checker.getSymbolAtLocation(node.name);
+      if (symbol) {
+        const classEntries:DocEntry[] = serializeClass(symbol);
+        classEntries.forEach(function(entry){
+          output.push(entry);
+        });
+      }
+    }else{
     /*else if(ts.isMethodDeclaration(node)){
       console.log("isMethodDeclaration");
       //console.log("isMethodDeclaration");
@@ -181,7 +189,7 @@ function generateDocumentation(
       .getConstructSignatures()
       .map(serializeSignature);
 
-    console.log(constructorDetails.constructors);
+    //console.log(constructorDetails.constructors);
 
     detailsList.push(constructorDetails);
 
@@ -212,7 +220,7 @@ function generateDocumentation(
           const sigInfo:DocEntry[] = symType
             .getCallSignatures()
             .map(serializeSignature);
-            console.log(sigInfo[0]);
+            //console.log(sigInfo[0]);
 
           if(sigInfo.length > 0){
             symbolDetails.signatureInfo = sigInfo;
