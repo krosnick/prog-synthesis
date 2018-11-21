@@ -9,6 +9,8 @@ interface DocEntry {
   documentation?: string;
   type?: string;
   constructors?: DocEntry[];
+  methods?: DocEntry[];
+  properties?: DocEntry[];
   signatureInfo?: DocEntry[];
   parameters?: DocEntry[];
   returnType?: string;
@@ -171,6 +173,10 @@ function generateDocumentation(
     return detailsList;
   }
 
+  /*function serializeInterface(symbol: ts.Symbol){
+
+  }*/
+
   /** Serialize a class symbol information */
   function serializeClass(symbol: ts.Symbol) {
 
@@ -185,6 +191,7 @@ function generateDocumentation(
       symbol,
       symbol.valueDeclaration!
     );
+    //console.log(symbol.valueDeclaration);
     constructorDetails.constructors = constructorType
       .getConstructSignatures()
       .map(serializeSignature);
@@ -193,30 +200,45 @@ function generateDocumentation(
 
     detailsList.push(constructorDetails);
 
+    let methodsList = [];
+    let propertiesList = [];
+
     // Methods + properties
     const iter:ts.Iterator<ts.__String> = symbol.members.keys();
     let memberCounter = 0;
     while(memberCounter < symbol.members.size){
       const memberItem = iter.next();
       const memberName = memberItem.value;
+      //console.log(memberName);
       memberCounter += 1;
 
       if(memberName !== "__constructor"){
         const thisSymbol:ts.Symbol = symbol.members.get(memberName);
         let isPublic = true;
+        //console.log(ts.SyntaxKind[thisSymbol.declarations[0].kind]);
         if(thisSymbol.declarations[0].modifiers && thisSymbol.declarations[0].modifiers[0]){
           if(thisSymbol.declarations[0].modifiers[0].kind !== ts.SyntaxKind.PublicKeyword){
             isPublic = false;
           }
+          //console.log(ts.SyntaxKind[thisSymbol.declarations[0].kind]);
+          //console.log(thisSymbol.declarations[0].modifiers);
         }
 
         if(isPublic){
+          //console.log("isPublic");
           let symbolDetails = serializeSymbol(thisSymbol);
           let symType = checker.getTypeOfSymbolAtLocation(
             thisSymbol,
             thisSymbol.valueDeclaration!
           );
-
+          //console.log(checker.getDeclaredTypeOfSymbol(thisSymbol));
+          //console.log(checker.getDeclaredTypeOfSymbol(thisSymbol).);
+          //console.log(symType);
+          //symType.
+          //  console.log(thisSymbol.declarations[0]);
+          //console.log(symType.getStringIndexType());
+          //console.log(thisSymbol.);
+          //console.log(symType);
           const sigInfo:DocEntry[] = symType
             .getCallSignatures()
             .map(serializeSignature);
@@ -226,10 +248,18 @@ function generateDocumentation(
             symbolDetails.signatureInfo = sigInfo;
           }
 
-          detailsList.push(symbolDetails);
+          if(thisSymbol.declarations[0].kind === ts.SyntaxKind.PropertyDeclaration){
+            propertiesList.push(symbolDetails);
+          }else if(thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodDeclaration){
+            methodsList.push(symbolDetails);
+          }
+
+          //detailsList.push(symbolDetails);
         }
       }
     }
+    constructorDetails.methods = methodsList;
+    constructorDetails.properties = propertiesList;
     return detailsList;
   }
 
