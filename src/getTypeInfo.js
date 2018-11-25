@@ -117,7 +117,7 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles) {
             symbolDetails.signatureInfo = sigInfo;
         }
         detailsList.push(symbolDetails);
-        console.log(symbolDetails.name);
+        //console.log(symbolDetails.name);
         return detailsList;
     }
     /** Serialize a class symbol information */

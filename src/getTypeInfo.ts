@@ -158,7 +158,7 @@ export function getDocEntrys(
     }
 
     detailsList.push(symbolDetails);
-    console.log(symbolDetails.name);
+    //console.log(symbolDetails.name);
 
     return detailsList;
   }
