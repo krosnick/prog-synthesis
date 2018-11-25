@@ -107,7 +107,7 @@ export function getDocEntrys(
       let symbol = checker.getSymbolAtLocation(node.name)
       let list = serializeFunction(symbol);
       list.forEach(function(item) { fileContents.functionDeclarations.push(item) })
-    } else if(ts.isInterfaceDeclaration(node.parent)){
+    } else if(ts.isInterfaceDeclaration(node)){
       let symbol = checker.getSymbolAtLocation(node.name);
       if (symbol) {
         const classEntries:DocEntry[] = serializeClass(symbol);

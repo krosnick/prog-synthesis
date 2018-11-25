@@ -79,7 +79,7 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles) {
             var list = serializeFunction(symbol);
             list.forEach(function (item) { fileContents.functionDeclarations.push(item); });
         }
-        else if (ts.isInterfaceDeclaration(node.parent)) {
+        else if (ts.isInterfaceDeclaration(node)) {
             var symbol = checker.getSymbolAtLocation(node.name);
             if (symbol) {
                 var classEntries = serializeClass(symbol);
