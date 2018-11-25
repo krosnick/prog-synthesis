@@ -3,7 +3,7 @@
 import * as ts from "typescript";
 //import * as fs from "fs";
 
-interface DocEntry {
+export interface DocEntry {
   name?: string;
   fileName?: string;
   documentation?: string;
@@ -16,11 +16,19 @@ interface DocEntry {
   returnType?: string;
 }
 
+export interface FileContents{
+  classDeclarations: DocEntry[],
+  interfaceDeclarations: DocEntry[],
+  functionDeclarations: DocEntry[],
+  variableStatements: DocEntry[]
+};
+
 /** Generate documentation for all classes in a set of .ts files */
-function generateDocumentation(
+export function getDocEntrys(
   fileNames: string[],
-  options: ts.CompilerOptions
-): DocEntry[] {
+  options: ts.CompilerOptions,
+  checkDeclarationFiles: boolean
+  ): FileContents {
 
 
   // Build a program using the set of root file names in fileNames
@@ -29,15 +37,25 @@ function generateDocumentation(
   // Get the checker, we will use it to find more about classes
   let checker = program.getTypeChecker();
 
-  let output: DocEntry[] = [];
+  let fileContents:FileContents = {
+    classDeclarations: [],
+    interfaceDeclarations: [],
+    functionDeclarations: [],
+    variableStatements: []
+  };
 
   // Visit every sourceFile in the program
   for (const sourceFile of program.getSourceFiles()) {
-    if (!sourceFile.isDeclarationFile) {
-      // Walk the tree to search for classes
-      //ts.forEachChild(sourceFile, visit);
+    const isDeclarationFile = sourceFile.isDeclarationFile;
+    if(checkDeclarationFiles){
+      // Walk the tree to search for nodes (classes, variable statements, etc)
+      ts.forEachChild(sourceFile, visit);
+    }else{ // caller does not want to check declaration files
+      if(!isDeclarationFile){
+        // Walk the tree to search for nodes (classes, variable statements, etc)
+        ts.forEachChild(sourceFile, visit);
+      }
     }
-    ts.forEachChild(sourceFile, visit);
   }
 
   // console.log(output);
@@ -61,7 +79,7 @@ function generateDocumentation(
   // print out th   e doc
   //fs.writeFileSync("classes.json", JSON.stringify(output, undefined, 4));
 
-  return output;
+  return fileContents;
 
   /** visit nodes finding exported classes */
   function visit(node: ts.Node) {
@@ -71,80 +89,40 @@ function generateDocumentation(
     }
 
     if (ts.isClassDeclaration(node) && node.name) {
-      //console.log(node);
-      //console.log("isClassDeclaration");
       // This is a top level class, get its symbol
       let symbol = checker.getSymbolAtLocation(node.name);
       if (symbol) {
         const classEntries:DocEntry[] = serializeClass(symbol);
         classEntries.forEach(function(entry){
-          output.push(entry);
+          fileContents.classDeclarations.push(entry);
         });
       }
       // No need to walk any further, class expressions/inner declarations
       // cannot be exported
-    } else if (ts.isModuleDeclaration(node)) {
-      //console.log("isModuleDeclaration");
-      // This is a namespace, visit its children
-      //console.log(node);
-      //ts.forEachChild(node, visit);
     } else if(ts.isVariableStatement(node)){
-      //console.log(node);
       // Process variable statements (e.g., for example input/output code)
-        // Create a "serializeVariable" method?
-        //console.log(node);
-        //console.log(node.declarationList.declarations[0].name);
-        //let symbol = checker.getSymbolAtLocation(node.parent);
-        let symbol = checker.getSymbolAtLocation(node.declarationList.declarations[0].name);
-        output.push(serializeVariable(symbol));
+      let symbol = checker.getSymbolAtLocation(node.declarationList.declarations[0].name);
+      fileContents.variableStatements.push(serializeVariable(symbol));
     } else if(ts.isFunctionDeclaration(node)) {
-      // console.log(node.name)
       let symbol = checker.getSymbolAtLocation(node.name)
       let list = serializeFunction(symbol);
-      list.forEach(function(item) { output.push(item) })
-    } else if(ts.isInterfaceDeclaration(node)){
+      list.forEach(function(item) { fileContents.functionDeclarations.push(item) })
+    } else if(ts.isInterfaceDeclaration(node.parent)){
       let symbol = checker.getSymbolAtLocation(node.name);
       if (symbol) {
         const classEntries:DocEntry[] = serializeClass(symbol);
         classEntries.forEach(function(entry){
-          output.push(entry);
+          fileContents.interfaceDeclarations.push(entry);
         });
       }
     }else{
-    /*else if(ts.isMethodDeclaration(node)){
-      console.log("isMethodDeclaration");
-      //console.log("isMethodDeclaration");
-      //console.log(node);
-    }*/
-      //console.log("ts.isVariableDeclaration(node): " + ts.isVariableDeclaration(node));
-      //console.log("node.kind === ts.SyntaxKind.TypeAliasDeclaration): " + (node.kind === ts.SyntaxKind.TypeAliasDeclaration));
-      //console.log("else");
-      //console.log("ts.SyntaxKind[node.kind]: " + (ts.SyntaxKind[node.kind]));
-      //console.log(node);
-      //console.log("node.kind: " + node.kind);
-      //console.log("ts.SyntaxKind[236]: " + ts.SyntaxKind[236]);
-      /*console.log("ts.SyntaxKind.VariableStatement: " + ts.SyntaxKind.VariableStatement);
-      console.log("ts.SyntaxKind.VariableDeclarationList: " + ts.SyntaxKind.VariableDeclarationList);
-      console.log("ts.SyntaxKind.VariableDeclaration: " + ts.SyntaxKind.VariableDeclaration);*/
-      //console.log("testing123");
-      //console.log(node.getChildren());
-      //ts.forEachChild(node, visit);
-      //console.log(node);
     }
-      /*else if(ts.isFunctionDeclaration(node)){
-      console.log(node);
-      ts.forEachChild(node, visit);
-    }*/
   }
 
   /** Serialize a symbol into a json object */
   function serializeSymbol(symbol: ts.Symbol): DocEntry {
-    //console.log(symbol);
-
-    //console.log(checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration!).);
     return {
       name: symbol.getName(),
-      /*documentation: ts.displayPartsToString(symbol.getDocumentationComment()),*/
       type: checker.typeToString(
         checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration!)
       )
@@ -152,21 +130,15 @@ function generateDocumentation(
   }
 
   function serializeVariable(symbol: ts.Symbol){
-
     let symbolDetails = serializeSymbol(symbol);
     let symType = checker.getTypeOfSymbolAtLocation(
       symbol,
       symbol.valueDeclaration!
     );
-    //console.log(symType);
     symbolDetails.signatureInfo = symType
       .getCallSignatures()
       .map(serializeSignature);
-    //console.log(symbolDetails.signatureInfo);
-
-    //console.log(symbolDetails);
     return symbolDetails;
-
   }
 
   function serializeFunction(symbol: ts.Symbol) {
@@ -191,10 +163,6 @@ function generateDocumentation(
     return detailsList;
   }
 
-  /*function serializeInterface(symbol: ts.Symbol){
-
-  }*/
-
   /** Serialize a class symbol information */
   function serializeClass(symbol: ts.Symbol) {
 
@@ -209,12 +177,9 @@ function generateDocumentation(
       symbol,
       symbol.valueDeclaration!
     );
-    //console.log(symbol.valueDeclaration);
     constructorDetails.constructors = constructorType
       .getConstructSignatures()
       .map(serializeSignature);
-
-    //console.log(constructorDetails.constructors);
 
     detailsList.push(constructorDetails);
 
@@ -227,40 +192,26 @@ function generateDocumentation(
     while(memberCounter < symbol.members.size){
       const memberItem = iter.next();
       const memberName = memberItem.value;
-      //console.log(memberName);
       memberCounter += 1;
 
       if(memberName !== "__constructor"){
         const thisSymbol:ts.Symbol = symbol.members.get(memberName);
         let isPublic = true;
-        //console.log(ts.SyntaxKind[thisSymbol.declarations[0].kind]);
         if(thisSymbol.declarations[0].modifiers && thisSymbol.declarations[0].modifiers[0]){
           if(thisSymbol.declarations[0].modifiers[0].kind !== ts.SyntaxKind.PublicKeyword){
             isPublic = false;
           }
-          //console.log(ts.SyntaxKind[thisSymbol.declarations[0].kind]);
-          //console.log(thisSymbol.declarations[0].modifiers);
         }
 
         if(isPublic){
-          //console.log("isPublic");
           let symbolDetails = serializeSymbol(thisSymbol);
           let symType = checker.getTypeOfSymbolAtLocation(
             thisSymbol,
             thisSymbol.valueDeclaration!
           );
-          //console.log(checker.getDeclaredTypeOfSymbol(thisSymbol));
-          //console.log(checker.getDeclaredTypeOfSymbol(thisSymbol).);
-          //console.log(symType);
-          //symType.
-          //  console.log(thisSymbol.declarations[0]);
-          //console.log(symType.getStringIndexType());
-          //console.log(thisSymbol.);
-          //console.log(symType);
           const sigInfo:DocEntry[] = symType
             .getCallSignatures()
             .map(serializeSignature);
-            //console.log(sigInfo[0]);
 
           if(sigInfo.length > 0){
             symbolDetails.signatureInfo = sigInfo;
@@ -271,8 +222,6 @@ function generateDocumentation(
           }else if(thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodDeclaration){
             methodsList.push(symbolDetails);
           }
-
-          //detailsList.push(symbolDetails);
         }
       }
     }
@@ -285,8 +234,7 @@ function generateDocumentation(
   function serializeSignature(signature: ts.Signature) {
     return {
       parameters: signature.parameters.map(serializeSymbol),
-      returnType: checker.typeToString(signature.getReturnType())/*,
-      documentation: ts.displayPartsToString(signature.getDocumentationComment())*/
+      returnType: checker.typeToString(signature.getReturnType())
     };
   }
 
@@ -366,8 +314,3 @@ function generateDocumentation(
     // });
   }
 }
-
-generateDocumentation(process.argv.slice(2), {
-  target: ts.ScriptTarget.ES5,
-  module: ts.ModuleKind.CommonJS
-});
