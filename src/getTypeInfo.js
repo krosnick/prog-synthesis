@@ -18,8 +18,25 @@ function generateDocumentation(fileNames, options) {
         }
         ts.forEachChild(sourceFile, visit);
     }
-    console.log(output);
-    // print out the doc
+    // console.log(output);
+    //////////////////// TEST GET POSSIBLE FUNCTIONS ////////////////////
+    // let testProgram = ts.createProgram(["data/exampleOutput.ts"], options);
+    // let testChecker = testProgram.getTypeChecker();
+    // // var input: DocEntry[] = [];
+    // for (const sourceFile of testProgram.getSourceFiles()) {
+    //   if (!sourceFile.isDeclarationFile) {
+    //     // Walk the tree to search for classes
+    //     ts.forEachChild(sourceFile, visit);
+    //   }
+    //   //ts.forEachChild(sourceFile, visit);
+    // }
+    // var TESTInput = output.slice(0,2);
+    // var TESTCandidates = output.slice(2,-1);
+    // var TESTOutput = output.slice(-1);
+    // // console.log(testProgram);
+    // let possibleFunctions = getPossibleFunctions(TESTInput, TESTOutput, TESTCandidates);
+    ////////////////////////////// END TEST //////////////////////////////
+    // print out th   e doc
     //fs.writeFileSync("classes.json", JSON.stringify(output, undefined, 4));
     return output;
     /** visit nodes finding exported classes */
@@ -131,6 +148,7 @@ function generateDocumentation(fileNames, options) {
             symbolDetails.signatureInfo = sigInfo;
         }
         detailsList.push(symbolDetails);
+        console.log(symbolDetails.name);
         return detailsList;
     }
     /*function serializeInterface(symbol: ts.Symbol){
@@ -216,6 +234,70 @@ function generateDocumentation(fileNames, options) {
     function isNodeExported(node) {
         return ((ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export) !== 0 ||
             (!!node.parent && node.parent.kind === ts.SyntaxKind.SourceFile));
+    }
+    function typesMatch(canType, otherType) {
+        if (canType === otherType) {
+            // We consider functions that return the exact type as example output
+            return true;
+        }
+        else if (otherType.substring(otherType.length - 2) === "[]") {
+            // We want an array so we consider functions that return any or any[]
+            if (canType === "any" ||
+                canType === "any[]") {
+                return true;
+            }
+        }
+        else if (otherType.substring(otherType.length - 2) !== "[]") {
+            // We want a single value so we consider functions that return any
+            if (canType === "any") {
+                return true;
+            }
+        }
+        return false;
+    }
+    function paramsAcceptable(can, inp) {
+        for (var i = 0; i < can.signatureInfo[0].parameters.length; i++) {
+            var paramFound = false;
+            // For each of the parameters in the candidate function, check if there
+            // is a variable of an acceptable type that can be passed in
+            for (var j = 0; j < inp.length; j++) {
+                if (typesMatch(can.signatureInfo[0].parameters[i].type, inp[j].type)) {
+                    paramFound = true;
+                }
+            }
+            // If for any one parameter, there was no variable that could be passed
+            // in, return false
+            if (paramFound === false) {
+                return false;
+            }
+            ;
+        }
+        return true;
+    }
+    function getPossibleFunctions(inputDE, outputDE, candidates) {
+        console.log(inputDE);
+        console.log(outputDE);
+        console.log(candidates);
+        var possibleFunctions = [];
+        candidates.forEach(function (candidate) {
+            if ("signatureInfo" in candidate) {
+                if (candidate.signatureInfo.length > 0) {
+                    // Consider output values
+                    if (typesMatch(candidate.signatureInfo[0].returnType, outputDE[0].type) &&
+                        paramsAcceptable(candidate, inputDE)) {
+                        possibleFunctions.push(candidate);
+                    }
+                }
+            }
+        });
+        console.log("POSSIBLE FUNCTIONS: ");
+        console.log(possibleFunctions);
+        // possibleFunctions.forEach((possibleFunction) => {
+        //   console.log(possibleFunction);
+        //   possibleFunction.signatureInfo.forEach((param) => {
+        //     console.log(param);
+        //   });
+        // });
     }
 }
 generateDocumentation(process.argv.slice(2), {
