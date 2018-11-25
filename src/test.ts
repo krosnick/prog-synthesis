@@ -12,7 +12,14 @@ export class C {
     public pubValue:number;
     private privValue:string;
 
-    public addNewDemonstration(demonstration:string):boolean{
+    public static addNewDemonstration(demonstration:string):boolean{
+        return true;
+    }
+    
+    public testFunc(str:string):boolean{
         return true;
     }
 }
+
+C.addNewDemonstration('hello');
+//C.testFunc('asdf');

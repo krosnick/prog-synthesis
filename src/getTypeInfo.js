@@ -72,7 +72,9 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles) {
         else if (ts.isVariableStatement(node)) {
             // Process variable statements (e.g., for example input/output code)
             var symbol = checker.getSymbolAtLocation(node.declarationList.declarations[0].name);
-            fileContents.variableStatements.push(serializeVariable(symbol));
+            var varDocEntry = serializeVariable(symbol);
+            //console.log(varDocEntry.name);
+            fileContents.variableStatements.push(varDocEntry);
         }
         else if (ts.isFunctionDeclaration(node)) {
             var symbol = checker.getSymbolAtLocation(node.name);
@@ -85,6 +87,11 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles) {
                 var classEntries = serializeClass(symbol);
                 classEntries.forEach(function (entry) {
                     fileContents.interfaceDeclarations.push(entry);
+                    //console.log(entry.name);
+                    /*if(entry.name === "Date"){
+                      //console.log(entry);
+                      console.log(node);
+                    }*/
                 });
             }
         }
@@ -132,44 +139,119 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles) {
             .getConstructSignatures()
             .map(serializeSignature);
         detailsList.push(constructorDetails);
+        /*let methodsList:DocEntry[] = [];
+        let propertiesList:DocEntry[] = [];*/
+        // Static(?) methods + properties?
+        //console.log(symbol.exports.size);
+        //symbol.
+        var staticIter = symbol.exports.keys();
+        var staticMemberCounter = 0;
+        while (staticMemberCounter < symbol.exports.size) {
+            var memberItem = staticIter.next();
+            var memberName = memberItem.value;
+            //console.log(memberName);
+            staticMemberCounter += 1;
+        }
+        var memberMethodsProperties = processMethodsAndProperties(symbol.members);
+        var staticMethodsProperties = processMethodsAndProperties(symbol.exports);
+        /*// Instance methods + properties
+        const iter:ts.Iterator<ts.__String> = symbol.members.keys();
+        let memberCounter = 0;
+        while(memberCounter < symbol.members.size){
+          const memberItem = iter.next();
+          const memberName = memberItem.value;
+          memberCounter += 1;
+    
+          if(memberName !== "__constructor"){
+            const thisSymbol:ts.Symbol = symbol.members.get(memberName);
+            let isPublic = true;
+            if(thisSymbol.declarations[0].modifiers && thisSymbol.declarations[0].modifiers[0]){
+              if(thisSymbol.declarations[0].modifiers[0].kind !== ts.SyntaxKind.PublicKeyword){
+                isPublic = false;
+              }
+            }
+            
+            if(isPublic){
+              let symbolDetails = serializeSymbol(thisSymbol);
+              let symType = checker.getTypeOfSymbolAtLocation(
+                thisSymbol,
+                thisSymbol.valueDeclaration!
+              );
+              const sigInfo:DocEntry[] = symType
+                .getCallSignatures()
+                .map(serializeSignature);
+    
+              if(sigInfo.length > 0){
+                symbolDetails.signatureInfo = sigInfo;
+              }
+    
+              if(thisSymbol.declarations[0].kind === ts.SyntaxKind.PropertyDeclaration){
+                propertiesList.push(symbolDetails);
+              }else if(thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodDeclaration){
+                methodsList.push(symbolDetails);
+              }
+            }
+          }
+        }*/
+        //constructorDetails.methods = methodsList;
+        constructorDetails.methods = {
+            "instanceMethods": memberMethodsProperties.methods,
+            "staticMethods": staticMethodsProperties.methods
+        };
+        /*console.log("constructorDetails.methods");
+        console.log(constructorDetails.methods);*/
+        //constructorDetails.properties = memberMethodsProperties.properties;
+        constructorDetails.properties = {
+            "instanceProperties": memberMethodsProperties.properties,
+            "staticProperties": staticMethodsProperties.properties
+        };
+        /*console.log("constructorDetails.properties");
+        console.log(constructorDetails.properties);*/
+        return detailsList;
+    }
+    // Create DocEntry lists of methods and properties from the UnderscoreEscapedMap object
+    // Only include public methods/properties
+    function processMethodsAndProperties(methodsAndProperties) {
         var methodsList = [];
         var propertiesList = [];
-        // Methods + properties
-        var iter = symbol.members.keys();
+        var iter = methodsAndProperties.keys();
         var memberCounter = 0;
-        while (memberCounter < symbol.members.size) {
+        while (memberCounter < methodsAndProperties.size) {
             var memberItem = iter.next();
             var memberName = memberItem.value;
             memberCounter += 1;
             if (memberName !== "__constructor") {
-                var thisSymbol = symbol.members.get(memberName);
+                var thisSymbol = methodsAndProperties.get(memberName);
                 var isPublic = true;
-                if (thisSymbol.declarations[0].modifiers && thisSymbol.declarations[0].modifiers[0]) {
-                    if (thisSymbol.declarations[0].modifiers[0].kind !== ts.SyntaxKind.PublicKeyword) {
-                        isPublic = false;
+                if (thisSymbol.declarations) {
+                    if (thisSymbol.declarations[0] && thisSymbol.declarations[0].modifiers && thisSymbol.declarations[0].modifiers[0]) {
+                        if (thisSymbol.declarations[0].modifiers[0].kind !== ts.SyntaxKind.PublicKeyword) {
+                            isPublic = false;
+                        }
                     }
-                }
-                if (isPublic) {
-                    var symbolDetails = serializeSymbol(thisSymbol);
-                    var symType = checker.getTypeOfSymbolAtLocation(thisSymbol, thisSymbol.valueDeclaration);
-                    var sigInfo = symType
-                        .getCallSignatures()
-                        .map(serializeSignature);
-                    if (sigInfo.length > 0) {
-                        symbolDetails.signatureInfo = sigInfo;
-                    }
-                    if (thisSymbol.declarations[0].kind === ts.SyntaxKind.PropertyDeclaration) {
-                        propertiesList.push(symbolDetails);
-                    }
-                    else if (thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodDeclaration) {
-                        methodsList.push(symbolDetails);
+                    if (isPublic) {
+                        var symbolDetails = serializeSymbol(thisSymbol);
+                        var symType = checker.getTypeOfSymbolAtLocation(thisSymbol, thisSymbol.valueDeclaration);
+                        var sigInfo = symType
+                            .getCallSignatures()
+                            .map(serializeSignature);
+                        if (sigInfo.length > 0) {
+                            symbolDetails.signatureInfo = sigInfo;
+                        }
+                        if (thisSymbol.declarations[0].kind === ts.SyntaxKind.PropertyDeclaration) {
+                            propertiesList.push(symbolDetails);
+                        }
+                        else if (thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodDeclaration) {
+                            methodsList.push(symbolDetails);
+                        }
                     }
                 }
             }
         }
-        constructorDetails.methods = methodsList;
-        constructorDetails.properties = propertiesList;
-        return detailsList;
+        return {
+            "methods": methodsList,
+            "properties": propertiesList
+        };
     }
     /** Serialize a signature (call or construct) */
     function serializeSignature(signature) {

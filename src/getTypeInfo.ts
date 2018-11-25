@@ -9,8 +9,15 @@ export interface DocEntry {
   documentation?: string;
   type?: string;
   constructors?: DocEntry[];
-  methods?: DocEntry[];
-  properties?: DocEntry[];
+  //methods?: DocEntry[];
+  methods?: {
+    instanceMethods?: DocEntry[];
+    staticMethods?: DocEntry[];
+  };
+  properties?: {
+    instanceProperties?: DocEntry[];
+    staticProperties?: DocEntry[];
+  };
   signatureInfo?: DocEntry[];
   parameters?: DocEntry[];
   returnType?: string;
@@ -102,7 +109,9 @@ export function getDocEntrys(
     } else if(ts.isVariableStatement(node)){
       // Process variable statements (e.g., for example input/output code)
       let symbol = checker.getSymbolAtLocation(node.declarationList.declarations[0].name);
-      fileContents.variableStatements.push(serializeVariable(symbol));
+      const varDocEntry:DocEntry = serializeVariable(symbol);
+      //console.log(varDocEntry.name);
+      fileContents.variableStatements.push(varDocEntry);
     } else if(ts.isFunctionDeclaration(node)) {
       let symbol = checker.getSymbolAtLocation(node.name)
       let list = serializeFunction(symbol);
@@ -113,6 +122,11 @@ export function getDocEntrys(
         const classEntries:DocEntry[] = serializeClass(symbol);
         classEntries.forEach(function(entry){
           fileContents.interfaceDeclarations.push(entry);
+          //console.log(entry.name);
+          /*if(entry.name === "Date"){
+            //console.log(entry);
+            console.log(node);
+          }*/
         });
       }
     }else{
@@ -183,10 +197,31 @@ export function getDocEntrys(
 
     detailsList.push(constructorDetails);
 
-    let methodsList = [];
-    let propertiesList = [];
+    /*let methodsList:DocEntry[] = [];
+    let propertiesList:DocEntry[] = [];*/
 
-    // Methods + properties
+    // Static(?) methods + properties?
+    //console.log(symbol.exports.size);
+    //symbol.
+    const staticIter:ts.Iterator<ts.__String> = symbol.exports.keys();
+    let staticMemberCounter = 0;
+    while(staticMemberCounter < symbol.exports.size){
+      const memberItem = staticIter.next();
+      const memberName = memberItem.value;
+      //console.log(memberName);
+      staticMemberCounter += 1;
+    }
+    
+    const memberMethodsProperties:{
+      methods: DocEntry[];
+      properties: DocEntry[];
+    } = processMethodsAndProperties(symbol.members);
+
+    const staticMethodsProperties:{
+      methods: DocEntry[];
+      properties: DocEntry[];
+    } = processMethodsAndProperties(symbol.exports);
+    /*// Instance methods + properties
     const iter:ts.Iterator<ts.__String> = symbol.members.keys();
     let memberCounter = 0;
     while(memberCounter < symbol.members.size){
@@ -202,7 +237,7 @@ export function getDocEntrys(
             isPublic = false;
           }
         }
-
+        
         if(isPublic){
           let symbolDetails = serializeSymbol(thisSymbol);
           let symType = checker.getTypeOfSymbolAtLocation(
@@ -224,10 +259,74 @@ export function getDocEntrys(
           }
         }
       }
-    }
-    constructorDetails.methods = methodsList;
-    constructorDetails.properties = propertiesList;
+    }*/
+    //constructorDetails.methods = methodsList;
+    constructorDetails.methods = {
+      "instanceMethods": memberMethodsProperties.methods,
+      "staticMethods": staticMethodsProperties.methods
+    };
+    /*console.log("constructorDetails.methods");
+    console.log(constructorDetails.methods);*/
+    //constructorDetails.properties = memberMethodsProperties.properties;
+    constructorDetails.properties = {
+      "instanceProperties": memberMethodsProperties.properties,
+      "staticProperties": staticMethodsProperties.properties
+    };
+    /*console.log("constructorDetails.properties");
+    console.log(constructorDetails.properties);*/
     return detailsList;
+  }
+
+  // Create DocEntry lists of methods and properties from the UnderscoreEscapedMap object
+  // Only include public methods/properties
+  function processMethodsAndProperties(methodsAndProperties:ts.UnderscoreEscapedMap<ts.Symbol>):{methods:DocEntry[],properties:DocEntry[]}{
+    let methodsList:DocEntry[] = [];
+    let propertiesList:DocEntry[] = [];
+
+    const iter:ts.Iterator<ts.__String> = methodsAndProperties.keys();
+    let memberCounter = 0;
+    while(memberCounter < methodsAndProperties.size){
+      const memberItem = iter.next();
+      const memberName = memberItem.value;
+      memberCounter += 1;
+
+      if(memberName !== "__constructor"){
+        const thisSymbol:ts.Symbol = methodsAndProperties.get(memberName);
+        let isPublic = true;
+        if(thisSymbol.declarations){
+          if(thisSymbol.declarations[0] && thisSymbol.declarations[0].modifiers && thisSymbol.declarations[0].modifiers[0]){
+            if(thisSymbol.declarations[0].modifiers[0].kind !== ts.SyntaxKind.PublicKeyword){
+              isPublic = false;
+            }
+          }
+  
+          if(isPublic){
+            let symbolDetails = serializeSymbol(thisSymbol);
+            let symType = checker.getTypeOfSymbolAtLocation(
+              thisSymbol,
+              thisSymbol.valueDeclaration!
+            );
+            const sigInfo:DocEntry[] = symType
+              .getCallSignatures()
+              .map(serializeSignature);
+  
+            if(sigInfo.length > 0){
+              symbolDetails.signatureInfo = sigInfo;
+            }
+  
+            if(thisSymbol.declarations[0].kind === ts.SyntaxKind.PropertyDeclaration){
+              propertiesList.push(symbolDetails);
+            }else if(thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodDeclaration){
+              methodsList.push(symbolDetails);
+            }
+          }
+        }
+      }
+    }
+    return {
+      "methods": methodsList,
+      "properties": propertiesList
+    };
   }
 
   /** Serialize a signature (call or construct) */

@@ -10,20 +10,21 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     }, false);
     console.log("inputFileContents");
     console.log(inputFileContents);
-    // Process required output; save as DocEntry[]
-    var outputFileContents = getTypeInfo_1.getDocEntrys([fileNameRequiredOutput], {
+    /*// Process required output; save as DocEntry[]
+    const outputFileContents:FileContents = getDocEntrys([fileNameRequiredOutput], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
-    }, false);
+    }, false);*/
     /*console.log("outputFileContents");
     console.log(outputFileContents);*/
     // Process native JS/TS (from lib.d.ts)
-    var tsNativeContents = getTypeInfo_1.getDocEntrys(["./lib.d.ts"], {
+    /*const tsNativeContents:FileContents = getDocEntrys(["./lib.d.ts"], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
-    }, true);
+    }, true);*/
     /*console.log("tsNativeContents");
     console.log(tsNativeContents);*/
+    //console.log(tsNativeContents.variableStatements);
     // Process native JS/TS (from lib.d.ts) and imported files (from fileNameRequiredInput)
     // Save functions as DocEntry[]
     // Save classes as DocEntry[]; actually, maybe save as map from className-->DocEntry?
