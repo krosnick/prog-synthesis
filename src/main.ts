@@ -1,5 +1,4 @@
-import {getDocEntrys} from "./getTypeInfo";
-import {FileContents} from "./getTypeInfo";
+import {getDocEntrys,FileContents,getPossibleFunctions,getPossibleClassMethods} from "./getTypeInfo";
 import * as ts from "typescript";
 
 function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
@@ -16,8 +15,8 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
     }, false);
-    console.log("outputFileContents");
-    console.log(outputFileContents);
+    // console.log("outputFileContents");
+    // console.log(outputFileContents);
 
     // Process native JS/TS (from lib.d.ts)
     const tsNativeContents:FileContents = getDocEntrys(["./lib.d.ts"], {
@@ -26,7 +25,15 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
     }, true);
     /*console.log("tsNativeContents");
     console.log(tsNativeContents);*/
-    //console.log(tsNativeContents.variableStatements);
+    // getPossibleFunctions(inputFileContents.variableStatements,
+    //                      inputFileContents.functionDeclarations,
+    //                      outputFileContents.variableStatements);
+    let possibleClassMethods = getPossibleClassMethods(inputFileContents, outputFileContents);
+    // Print final output for debugging
+    console.log(possibleClassMethods);
+    console.log(possibleClassMethods["possibleFunctions"]);
+    console.log(possibleClassMethods["mapClassToInstanceMethods"]);
+    console.log(possibleClassMethods["mapClassToStaticMethods"]);
 
     // Process native JS/TS (from lib.d.ts) and imported files (from fileNameRequiredInput)
         // Save functions as DocEntry[]
@@ -35,7 +42,7 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
 
     // For the desired output type and the input types available,
         // search the DocEntry[]s for appropriate functions/classes/variables
-    
+
 }
 
 /*const inputArgs:string[] = process.argv;

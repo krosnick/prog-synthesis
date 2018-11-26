@@ -15,8 +15,8 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
     }, false);
-    console.log("outputFileContents");
-    console.log(outputFileContents);
+    // console.log("outputFileContents");
+    // console.log(outputFileContents);
     // Process native JS/TS (from lib.d.ts)
     var tsNativeContents = getTypeInfo_1.getDocEntrys(["./lib.d.ts"], {
         target: ts.ScriptTarget.ES5,
@@ -24,7 +24,15 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     }, true);
     /*console.log("tsNativeContents");
     console.log(tsNativeContents);*/
-    //console.log(tsNativeContents.variableStatements);
+    // getPossibleFunctions(inputFileContents.variableStatements,
+    //                      inputFileContents.functionDeclarations,
+    //                      outputFileContents.variableStatements);
+    var possibleClassMethods = getTypeInfo_1.getPossibleClassMethods(inputFileContents, outputFileContents);
+    // Print final output for debugging
+    console.log(possibleClassMethods);
+    console.log(possibleClassMethods["possibleFunctions"]);
+    console.log(possibleClassMethods["mapClassToInstanceMethods"]);
+    console.log(possibleClassMethods["mapClassToStaticMethods"]);
     // Process native JS/TS (from lib.d.ts) and imported files (from fileNameRequiredInput)
     // Save functions as DocEntry[]
     // Save classes as DocEntry[]; actually, maybe save as map from className-->DocEntry?

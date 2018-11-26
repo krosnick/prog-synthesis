@@ -202,7 +202,7 @@ export function getDocEntrys(
     // Static(?) methods + properties?
     //console.log(symbol.exports.size);
     //symbol.
-    
+
     const memberMethodsProperties:{
       methods: DocEntry[];
       properties: DocEntry[];
@@ -228,7 +228,7 @@ export function getDocEntrys(
             isPublic = false;
           }
         }
-        
+
         if(isPublic){
           let symbolDetails = serializeSymbol(thisSymbol);
           let symType = checker.getTypeOfSymbolAtLocation(
@@ -291,7 +291,7 @@ export function getDocEntrys(
                 isPublic = false;
               }
             }
-    
+
             if(isPublic){
               let symbolDetails = serializeSymbol(thisSymbol);
               let symType = checker.getTypeOfSymbolAtLocation(
@@ -301,11 +301,11 @@ export function getDocEntrys(
               const sigInfo:DocEntry[] = symType
                 .getCallSignatures()
                 .map(serializeSignature);
-    
+
               if(sigInfo.length > 0){
                 symbolDetails.signatureInfo = sigInfo;
               }
-    
+
               if(thisSymbol.declarations[0].kind === ts.SyntaxKind.PropertyDeclaration){
                 propertiesList.push(symbolDetails);
               }else if(thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodDeclaration){
@@ -338,71 +338,145 @@ export function getDocEntrys(
     );
   }
 
-  function typesMatch(canType: string, otherType: string) {
-    if (canType === otherType) {
-      // We consider functions that return the exact type as example output
-      return true;
-    }
-    else if (otherType.substring(otherType.length - 2) === "[]") {
-      // We want an array so we consider functions that return any or any[]
-      if (canType === "any" ||
-          canType === "any[]") {
-        return true;
-      }
-    }
-    else if (otherType.substring(otherType.length - 2) !== "[]") {
-      // We want a single value so we consider functions that return any
-      if (canType === "any") {
-        return true;
-      }
-    }
-    return false;
-  }
+}
 
-  function paramsAcceptable(can: DocEntry, inp: DocEntry[]) {
-    for (var i: number = 0; i < can.signatureInfo[0].parameters.length; i++) {
-      var paramFound = false;
-      // For each of the parameters in the candidate function, check if there
-      // is a variable of an acceptable type that can be passed in
-      for (var j = 0; j < inp.length; j++) {
-        if (typesMatch(can.signatureInfo[0].parameters[i].type, inp[j].type)) {
-          paramFound = true;
-        }
-      }
-      // If for any one parameter, there was no variable that could be passed
-      // in, return false
-      if (paramFound === false) {
-        return false
-      };
-    }
+function typesMatch(canType: string, otherType: string) {
+  if (canType === otherType) {
+    // We consider functions that return the exact type as example output
     return true;
   }
-
-  function getPossibleFunctions(inputDE: DocEntry[],
-                                outputDE: DocEntry[],
-                                candidates: DocEntry[]) {
-    console.log(inputDE);
-    console.log(outputDE);
-    console.log(candidates);
-    var possibleFunctions = [];
-    candidates.forEach((candidate) => {
-      if ("signatureInfo" in candidate) {
-        if (candidate.signatureInfo.length > 0) {
-          // Consider output values
-          if (typesMatch(candidate.signatureInfo[0].returnType, outputDE[0].type) &&
-              paramsAcceptable(candidate, inputDE)) {
-            possibleFunctions.push(candidate);
-          }
-        }
-      }
-    });
-    console.log("POSSIBLE FUNCTIONS: ");
-    console.log(possibleFunctions);
-    // possibleFunctions.forEach((possibleFunction) => {
-    //   console.log(possibleFunction);
-    //   possibleFunction.signatureInfo.forEach((param) => {
-    //     console.log(param);
-    //   });
-    // });
+  else if (otherType.substring(otherType.length - 2) === "[]") {
+    // We want an array so we consider functions that return any or any[]
+    if (canType === "any" ||
+        canType === "any[]") {
+      return true;
+    }
   }
+  else if (otherType.substring(otherType.length - 2) !== "[]") {
+    // We want a single value so we consider functions that return any
+    if (canType === "any") {
+      return true;
+    }
+  }
+  return false;
+}
+
+function paramsAcceptable(sigInfo, inp: DocEntry[]) {
+  for (var i: number = 0; i < sigInfo.parameters.length; i++) {
+    var paramFound = false;
+    // For each of the parameters in the candidate function, check if there
+    // is a variable of an acceptable type that can be passed in
+    for (var j = 0; j < inp.length; j++) {
+      if (typesMatch(sigInfo.parameters[i].type, inp[j].type)) {
+        paramFound = true;
+      }
+    }
+    // If for any one parameter, there was no variable that could be passed
+    // in, return false
+    if (paramFound === false) {
+      return false
+    };
+  }
+  return true;
+}
+
+function addCandidateFunction(candidateVariables: DocEntry[],
+                              candidateFunction: DocEntry,
+                              outputDE: DocEntry[],
+                              possibleFunctions: any[]) {
+  if ("signatureInfo" in candidateFunction) {
+    if (candidateFunction.signatureInfo.length > 0) {
+      // Consider output values
+      if (typesMatch(candidateFunction.signatureInfo[0].returnType, outputDE[0].type) &&
+          paramsAcceptable(candidateFunction.signatureInfo[0], candidateVariables)) {
+        // Modifies the list in the caller's scope
+        possibleFunctions.push(candidateFunction);
+      }
+    }
+  }
+}
+
+export function getPossibleFunctions(candidateVariables: DocEntry[],
+                                     candidateFunctions: DocEntry[],
+                                     outputDE: DocEntry[]) {
+  // console.log(candidateVariables);
+  // console.log(candidateFunctions);
+  // console.log(outputDE);
+  var possibleFunctions = [];
+  candidateFunctions.forEach((candidateFunction) => {
+    addCandidateFunction(candidateVariables, candidateFunction, outputDE, possibleFunctions);
+  });
+  // candidateClasses.forEach((candidateClass) => {
+  //   candidateClass.constructors.forEach((constructor) => {
+  //     // TODO, handle constructors
+  //     console.log("TODO: Handle Constructors as candidates");
+  //   });
+  //   candidateClass.methods.forEach((method) => {
+  //     console.log("considering: ");
+  //     console.log(method);
+  //     addCandidateFunction(candidateVariables, method, outputDE, possibleFunctions);
+  //   });
+  // });
+  // candidateFunctions.forEach((candidateFunction) => {
+  //   addCandidateFunction(candidateFunction);
+  // });
+  console.log("POSSIBLE FUNCTIONS: ");
+  console.log(possibleFunctions);
+  return possibleFunctions;
+  // possibleFunctions.forEach((possibleFunction) => {
+  //   console.log(possibleFunction);
+  //   possibleFunction.signatureInfo.forEach((param) => {
+  //     console.log(param);
+  //   });
+  // });
+}
+
+function classObjectInstantiated(classDeclaration, inputFileContents) {
+  var instance_found = false;
+  inputFileContents.variableStatements.forEach((variable) => {
+    if (variable.type === classDeclaration.name) {
+      instance_found = true;
+    }
+  });
+  return instance_found;
+}
+
+export function getPossibleClassMethods(inputFileContents: FileContents,
+                                        outputFileContents: FileContents) {
+  var possibleClassMethods = {};
+  possibleClassMethods["possibleFunctions"] = [];
+  possibleClassMethods["mapClassToInstanceMethods"] = {};
+  possibleClassMethods["mapClassToStaticMethods"] = {};
+
+  possibleClassMethods["possibleFunctions"] = getPossibleFunctions(inputFileContents.variableStatements,
+                                                                   inputFileContents.functionDeclarations,
+                                                                   outputFileContents.variableStatements);
+  inputFileContents.classDeclarations.forEach((classDeclaration) => {
+    var possibleVariables = [];
+    possibleVariables = possibleVariables.concat(inputFileContents.variableStatements,
+                                                 classDeclaration.properties.staticProperties);
+    if (classObjectInstantiated(classDeclaration, inputFileContents)) {
+      possibleVariables = possibleVariables.concat(classDeclaration.properties.instanceProperties);
+      // If you want to consider the instance methods even if the class has not been instantiated, then move this outside of the if statement
+      possibleClassMethods["mapClassToInstanceMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables,
+                                                                                                      classDeclaration.methods.instanceMethods,
+                                                                                                      outputFileContents.variableStatements);
+    }
+
+    // console.log("mapClassToInstanceMethods");
+    // console.log(possibleClassMethods["mapClassToInstanceMethods"][classDeclaration.name]);
+
+    possibleClassMethods["mapClassToStaticMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables,
+                                                                                                  classDeclaration.methods.staticMethods,
+                                                                                                  outputFileContents.variableStatements);
+    // console.log("mapClassToStaticMethods");
+    // console.log(possibleClassMethods["mapClassToStaticMethods"][classDeclaration.name]);
+  });
+  return possibleClassMethods;
+  // possibleFunctions.forEach((possibleFunction) => {
+  //   console.log(possibleFunction);
+  //   possibleFunction.signatureInfo.forEach((param) => {
+  //     console.log(param);
+  //   });
+  // });
 }
