@@ -16,8 +16,8 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
     }, false);
-    /*console.log("outputFileContents");
-    console.log(outputFileContents);*/
+    console.log("outputFileContents");
+    console.log(outputFileContents);
 
     // Process native JS/TS (from lib.d.ts)
     const tsNativeContents:FileContents = getDocEntrys(["./lib.d.ts"], {

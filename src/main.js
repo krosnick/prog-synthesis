@@ -15,8 +15,8 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
     }, false);
-    /*console.log("outputFileContents");
-    console.log(outputFileContents);*/
+    console.log("outputFileContents");
+    console.log(outputFileContents);
     // Process native JS/TS (from lib.d.ts)
     var tsNativeContents = getTypeInfo_1.getDocEntrys(["./lib.d.ts"], {
         target: ts.ScriptTarget.ES5,

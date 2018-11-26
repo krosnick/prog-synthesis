@@ -9,7 +9,6 @@ export interface DocEntry {
   documentation?: string;
   type?: string;
   constructors?: DocEntry[];
-  //methods?: DocEntry[];
   methods?: {
     instanceMethods?: DocEntry[];
     staticMethods?: DocEntry[];
@@ -203,14 +202,6 @@ export function getDocEntrys(
     // Static(?) methods + properties?
     //console.log(symbol.exports.size);
     //symbol.
-    const staticIter:ts.Iterator<ts.__String> = symbol.exports.keys();
-    let staticMemberCounter = 0;
-    while(staticMemberCounter < symbol.exports.size){
-      const memberItem = staticIter.next();
-      const memberName = memberItem.value;
-      //console.log(memberName);
-      staticMemberCounter += 1;
-    }
     
     const memberMethodsProperties:{
       methods: DocEntry[];
@@ -283,41 +274,43 @@ export function getDocEntrys(
     let methodsList:DocEntry[] = [];
     let propertiesList:DocEntry[] = [];
 
-    const iter:ts.Iterator<ts.__String> = methodsAndProperties.keys();
-    let memberCounter = 0;
-    while(memberCounter < methodsAndProperties.size){
-      const memberItem = iter.next();
-      const memberName = memberItem.value;
-      memberCounter += 1;
+    if(methodsAndProperties && methodsAndProperties.size > 0){
+      const iter:ts.Iterator<ts.__String> = methodsAndProperties.keys();
+      let memberCounter = 0;
+      while(memberCounter < methodsAndProperties.size){
+        const memberItem = iter.next();
+        const memberName = memberItem.value;
+        memberCounter += 1;
 
-      if(memberName !== "__constructor"){
-        const thisSymbol:ts.Symbol = methodsAndProperties.get(memberName);
-        let isPublic = true;
-        if(thisSymbol.declarations){
-          if(thisSymbol.declarations[0] && thisSymbol.declarations[0].modifiers && thisSymbol.declarations[0].modifiers[0]){
-            if(thisSymbol.declarations[0].modifiers[0].kind !== ts.SyntaxKind.PublicKeyword){
-              isPublic = false;
+        if(memberName !== "__constructor"){
+          const thisSymbol:ts.Symbol = methodsAndProperties.get(memberName);
+          let isPublic = true;
+          if(thisSymbol.declarations){
+            if(thisSymbol.declarations[0] && thisSymbol.declarations[0].modifiers && thisSymbol.declarations[0].modifiers[0]){
+              if(thisSymbol.declarations[0].modifiers[0].kind !== ts.SyntaxKind.PublicKeyword){
+                isPublic = false;
+              }
             }
-          }
-  
-          if(isPublic){
-            let symbolDetails = serializeSymbol(thisSymbol);
-            let symType = checker.getTypeOfSymbolAtLocation(
-              thisSymbol,
-              thisSymbol.valueDeclaration!
-            );
-            const sigInfo:DocEntry[] = symType
-              .getCallSignatures()
-              .map(serializeSignature);
-  
-            if(sigInfo.length > 0){
-              symbolDetails.signatureInfo = sigInfo;
-            }
-  
-            if(thisSymbol.declarations[0].kind === ts.SyntaxKind.PropertyDeclaration){
-              propertiesList.push(symbolDetails);
-            }else if(thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodDeclaration){
-              methodsList.push(symbolDetails);
+    
+            if(isPublic){
+              let symbolDetails = serializeSymbol(thisSymbol);
+              let symType = checker.getTypeOfSymbolAtLocation(
+                thisSymbol,
+                thisSymbol.valueDeclaration!
+              );
+              const sigInfo:DocEntry[] = symType
+                .getCallSignatures()
+                .map(serializeSignature);
+    
+              if(sigInfo.length > 0){
+                symbolDetails.signatureInfo = sigInfo;
+              }
+    
+              if(thisSymbol.declarations[0].kind === ts.SyntaxKind.PropertyDeclaration){
+                propertiesList.push(symbolDetails);
+              }else if(thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodDeclaration){
+                methodsList.push(symbolDetails);
+              }
             }
           }
         }

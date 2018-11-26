@@ -144,14 +144,6 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles) {
         // Static(?) methods + properties?
         //console.log(symbol.exports.size);
         //symbol.
-        var staticIter = symbol.exports.keys();
-        var staticMemberCounter = 0;
-        while (staticMemberCounter < symbol.exports.size) {
-            var memberItem = staticIter.next();
-            var memberName = memberItem.value;
-            //console.log(memberName);
-            staticMemberCounter += 1;
-        }
         var memberMethodsProperties = processMethodsAndProperties(symbol.members);
         var staticMethodsProperties = processMethodsAndProperties(symbol.exports);
         /*// Instance methods + properties
@@ -214,35 +206,37 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles) {
     function processMethodsAndProperties(methodsAndProperties) {
         var methodsList = [];
         var propertiesList = [];
-        var iter = methodsAndProperties.keys();
-        var memberCounter = 0;
-        while (memberCounter < methodsAndProperties.size) {
-            var memberItem = iter.next();
-            var memberName = memberItem.value;
-            memberCounter += 1;
-            if (memberName !== "__constructor") {
-                var thisSymbol = methodsAndProperties.get(memberName);
-                var isPublic = true;
-                if (thisSymbol.declarations) {
-                    if (thisSymbol.declarations[0] && thisSymbol.declarations[0].modifiers && thisSymbol.declarations[0].modifiers[0]) {
-                        if (thisSymbol.declarations[0].modifiers[0].kind !== ts.SyntaxKind.PublicKeyword) {
-                            isPublic = false;
+        if (methodsAndProperties && methodsAndProperties.size > 0) {
+            var iter = methodsAndProperties.keys();
+            var memberCounter = 0;
+            while (memberCounter < methodsAndProperties.size) {
+                var memberItem = iter.next();
+                var memberName = memberItem.value;
+                memberCounter += 1;
+                if (memberName !== "__constructor") {
+                    var thisSymbol = methodsAndProperties.get(memberName);
+                    var isPublic = true;
+                    if (thisSymbol.declarations) {
+                        if (thisSymbol.declarations[0] && thisSymbol.declarations[0].modifiers && thisSymbol.declarations[0].modifiers[0]) {
+                            if (thisSymbol.declarations[0].modifiers[0].kind !== ts.SyntaxKind.PublicKeyword) {
+                                isPublic = false;
+                            }
                         }
-                    }
-                    if (isPublic) {
-                        var symbolDetails = serializeSymbol(thisSymbol);
-                        var symType = checker.getTypeOfSymbolAtLocation(thisSymbol, thisSymbol.valueDeclaration);
-                        var sigInfo = symType
-                            .getCallSignatures()
-                            .map(serializeSignature);
-                        if (sigInfo.length > 0) {
-                            symbolDetails.signatureInfo = sigInfo;
-                        }
-                        if (thisSymbol.declarations[0].kind === ts.SyntaxKind.PropertyDeclaration) {
-                            propertiesList.push(symbolDetails);
-                        }
-                        else if (thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodDeclaration) {
-                            methodsList.push(symbolDetails);
+                        if (isPublic) {
+                            var symbolDetails = serializeSymbol(thisSymbol);
+                            var symType = checker.getTypeOfSymbolAtLocation(thisSymbol, thisSymbol.valueDeclaration);
+                            var sigInfo = symType
+                                .getCallSignatures()
+                                .map(serializeSignature);
+                            if (sigInfo.length > 0) {
+                                symbolDetails.signatureInfo = sigInfo;
+                            }
+                            if (thisSymbol.declarations[0].kind === ts.SyntaxKind.PropertyDeclaration) {
+                                propertiesList.push(symbolDetails);
+                            }
+                            else if (thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodDeclaration) {
+                                methodsList.push(symbolDetails);
+                            }
                         }
                     }
                 }
