@@ -7,7 +7,8 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     var inputFileContents = getTypeInfo_1.getDocEntrys([fileNameRequiredInput], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
-    }, false);
+    }, true);
+    //}, false);
     console.log("inputFileContents");
     console.log(inputFileContents);
     // Process required output; save as DocEntry[]
@@ -18,12 +19,10 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     // console.log("outputFileContents");
     // console.log(outputFileContents);
     // Process native JS/TS (from lib.d.ts)
-    var tsNativeContents = getTypeInfo_1.getDocEntrys(["./lib.d.ts"], {
+    /*const tsNativeContents:FileContents = getDocEntrys(["./lib.d.ts"], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
-    }, true);
-    /*console.log("tsNativeContents");
-    console.log(tsNativeContents);*/
+    }, true);*/
     // getPossibleFunctions(inputFileContents.variableStatements,
     //                      inputFileContents.functionDeclarations,
     //                      outputFileContents.variableStatements);
