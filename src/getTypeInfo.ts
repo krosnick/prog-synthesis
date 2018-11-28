@@ -389,7 +389,7 @@ function addCandidateFunction(candidateVariables: DocEntry[],
       // Consider output values
       if (typesMatch(candidateFunction.signatureInfo[0].returnType, outputDE[0].type) &&
           paramsAcceptable(candidateFunction.signatureInfo[0], candidateVariables)) {
-        // Modifies the list in the caller's scope
+        // Modifies the list in the caller's scope, since possibleFunctions passed in
         possibleFunctions.push(candidateFunction);
       }
     }
@@ -399,36 +399,13 @@ function addCandidateFunction(candidateVariables: DocEntry[],
 export function getPossibleFunctions(candidateVariables: DocEntry[],
                                      candidateFunctions: DocEntry[],
                                      outputDE: DocEntry[]) {
-  // console.log(candidateVariables);
-  // console.log(candidateFunctions);
-  // console.log(outputDE);
   var possibleFunctions = [];
   candidateFunctions.forEach((candidateFunction) => {
     addCandidateFunction(candidateVariables, candidateFunction, outputDE, possibleFunctions);
   });
-  // candidateClasses.forEach((candidateClass) => {
-  //   candidateClass.constructors.forEach((constructor) => {
-  //     // TODO, handle constructors
-  //     console.log("TODO: Handle Constructors as candidates");
-  //   });
-  //   candidateClass.methods.forEach((method) => {
-  //     console.log("considering: ");
-  //     console.log(method);
-  //     addCandidateFunction(candidateVariables, method, outputDE, possibleFunctions);
-  //   });
-  // });
-  // candidateFunctions.forEach((candidateFunction) => {
-  //   addCandidateFunction(candidateFunction);
-  // });
   console.log("POSSIBLE FUNCTIONS: ");
   console.log(possibleFunctions);
   return possibleFunctions;
-  // possibleFunctions.forEach((possibleFunction) => {
-  //   console.log(possibleFunction);
-  //   possibleFunction.signatureInfo.forEach((param) => {
-  //     console.log(param);
-  //   });
-  // });
 }
 
 function classObjectInstantiated(classDeclaration, inputFileContents) {
@@ -446,15 +423,20 @@ export function getPossibleMethodsAndVariables(inputFileContents: FileContents,
   var possibleMethodsAndVariables = {};
   possibleMethodsAndVariables["possibleFunctions"] = [];
   possibleMethodsAndVariables["mapClassToInstanceMethods"] = {};
+  possibleMethodsAndVariables["mapClassToInstanceProperties"] = {};
   possibleMethodsAndVariables["mapClassToStaticMethods"] = {};
+  possibleMethodsAndVariables["mapClassToStaticProperties"] = {};
 
   var possibleVariables = inputFileContents.variableStatements;
+  possibleMethodsAndVariables["possibleVariables"] = inputFileContents.variableStatements;
 
   inputFileContents.classDeclarations.forEach((classDeclaration) => {
     if (classObjectInstantiated(classDeclaration, inputFileContents)) {
       possibleVariables = possibleVariables.concat(classDeclaration.properties.instanceProperties);
+      possibleMethodsAndVariables["mapClassToInstanceProperties"][classDeclaration.name] = classDeclaration.properties.instanceProperties;
     }
     possibleVariables = possibleVariables.concat(classDeclaration.properties.staticProperties);
+    possibleMethodsAndVariables["mapClassToStaticProperties"][classDeclaration.name] = classDeclaration.properties.staticProperties;
   });
 
   inputFileContents.classDeclarations.forEach((classDeclaration) => {
@@ -469,9 +451,24 @@ export function getPossibleMethodsAndVariables(inputFileContents: FileContents,
                                                                                                   outputFileContents.variableStatements);
   });
 
-  possibleMethodsAndVariables["possibleVariables"] = possibleVariables;
+  // possibleMethodsAndVariables["possibleVariables"] = possibleVariables;
   possibleMethodsAndVariables["possibleFunctions"] = getPossibleFunctions(possibleVariables,
                                                                    inputFileContents.functionDeclarations,
                                                                    outputFileContents.variableStatements);
   return possibleMethodsAndVariables;
 }
+
+// export function mapVariablesToTypes(variablesArray) {
+//   let variableTypeMap = {}
+//   variablesArray.forEach((variable) => {
+//     if ("type" in variable) {
+//       if (!(variable.type in variableTypeMap)) {
+//         variableTypeMap[variable.type] = [];
+//       }
+//       // variable is a DocEntry, if you do not need all the extra data,
+//       // just push variable.name to the variableTypeMap
+//       variableTypeMap[variable.type].push(variable);
+//     }
+//   });
+//   return variableTypeMap;
+// }
