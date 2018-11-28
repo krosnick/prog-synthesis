@@ -448,35 +448,29 @@ export function getPossibleClassMethods(inputFileContents: FileContents,
   possibleClassMethods["mapClassToInstanceMethods"] = {};
   possibleClassMethods["mapClassToStaticMethods"] = {};
 
-  possibleClassMethods["possibleFunctions"] = getPossibleFunctions(inputFileContents.variableStatements,
-                                                                   inputFileContents.functionDeclarations,
-                                                                   outputFileContents.variableStatements);
+  var possibleVariables = inputFileContents.variableStatements;
+
   inputFileContents.classDeclarations.forEach((classDeclaration) => {
-    var possibleVariables = [];
-    possibleVariables = possibleVariables.concat(inputFileContents.variableStatements,
-                                                 classDeclaration.properties.staticProperties);
     if (classObjectInstantiated(classDeclaration, inputFileContents)) {
       possibleVariables = possibleVariables.concat(classDeclaration.properties.instanceProperties);
+    }
+    possibleVariables = possibleVariables.concat(classDeclaration.properties.staticProperties);
+  });
+
+  inputFileContents.classDeclarations.forEach((classDeclaration) => {
+    if (classObjectInstantiated(classDeclaration, inputFileContents)) {
       // If you want to consider the instance methods even if the class has not been instantiated, then move this outside of the if statement
       possibleClassMethods["mapClassToInstanceMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables,
                                                                                                       classDeclaration.methods.instanceMethods,
                                                                                                       outputFileContents.variableStatements);
     }
-
-    // console.log("mapClassToInstanceMethods");
-    // console.log(possibleClassMethods["mapClassToInstanceMethods"][classDeclaration.name]);
-
     possibleClassMethods["mapClassToStaticMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables,
                                                                                                   classDeclaration.methods.staticMethods,
                                                                                                   outputFileContents.variableStatements);
-    // console.log("mapClassToStaticMethods");
-    // console.log(possibleClassMethods["mapClassToStaticMethods"][classDeclaration.name]);
   });
+
+  possibleClassMethods["possibleFunctions"] = getPossibleFunctions(possibleVariables,
+                                                                   inputFileContents.functionDeclarations,
+                                                                   outputFileContents.variableStatements);
   return possibleClassMethods;
-  // possibleFunctions.forEach((possibleFunction) => {
-  //   console.log(possibleFunction);
-  //   possibleFunction.signatureInfo.forEach((param) => {
-  //     console.log(param);
-  //   });
-  // });
 }
