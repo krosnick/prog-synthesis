@@ -6,7 +6,8 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
     const inputFileContents:FileContents = getDocEntrys([fileNameRequiredInput], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
-    }, false);
+    }, true);
+    //}, false);
     console.log("inputFileContents");
     console.log(inputFileContents);
 
@@ -19,12 +20,11 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
     // console.log(outputFileContents);
 
     // Process native JS/TS (from lib.d.ts)
-    const tsNativeContents:FileContents = getDocEntrys(["./lib.d.ts"], {
+    /*const tsNativeContents:FileContents = getDocEntrys(["./lib.d.ts"], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
-    }, true);
-    /*console.log("tsNativeContents");
-    console.log(tsNativeContents);*/
+    }, true);*/
+    
     // getPossibleFunctions(inputFileContents.variableStatements,
     //                      inputFileContents.functionDeclarations,
     //                      outputFileContents.variableStatements);
