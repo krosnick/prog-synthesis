@@ -1,4 +1,4 @@
-import {getDocEntrys,FileContents,getPossibleFunctions,getPossibleClassMethods} from "./getTypeInfo";
+import {getDocEntrys,FileContents,getPossibleFunctions,getPossibleMethodsAndVariables} from "./getTypeInfo";
 import * as ts from "typescript";
 
 function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
@@ -28,12 +28,12 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
     // getPossibleFunctions(inputFileContents.variableStatements,
     //                      inputFileContents.functionDeclarations,
     //                      outputFileContents.variableStatements);
-    let possibleClassMethods = getPossibleClassMethods(inputFileContents, outputFileContents);
+    let possibleMethodsAndVariables = getPossibleMethodsAndVariables(inputFileContents, outputFileContents);
     // Print final output for debugging
-    console.log(possibleClassMethods);
-    console.log(possibleClassMethods["possibleFunctions"]);
-    console.log(possibleClassMethods["mapClassToInstanceMethods"]);
-    console.log(possibleClassMethods["mapClassToStaticMethods"]);
+    console.log(possibleMethodsAndVariables);
+    console.log(possibleMethodsAndVariables["possibleFunctions"]);
+    console.log(possibleMethodsAndVariables["mapClassToInstanceMethods"]);
+    console.log(possibleMethodsAndVariables["mapClassToStaticMethods"]);
 
     // Process native JS/TS (from lib.d.ts) and imported files (from fileNameRequiredInput)
         // Save functions as DocEntry[]

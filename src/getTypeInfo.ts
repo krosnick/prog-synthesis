@@ -441,12 +441,12 @@ function classObjectInstantiated(classDeclaration, inputFileContents) {
   return instance_found;
 }
 
-export function getPossibleClassMethods(inputFileContents: FileContents,
-                                        outputFileContents: FileContents) {
-  var possibleClassMethods = {};
-  possibleClassMethods["possibleFunctions"] = [];
-  possibleClassMethods["mapClassToInstanceMethods"] = {};
-  possibleClassMethods["mapClassToStaticMethods"] = {};
+export function getPossibleMethodsAndVariables(inputFileContents: FileContents,
+                                               outputFileContents: FileContents) {
+  var possibleMethodsAndVariables = {};
+  possibleMethodsAndVariables["possibleFunctions"] = [];
+  possibleMethodsAndVariables["mapClassToInstanceMethods"] = {};
+  possibleMethodsAndVariables["mapClassToStaticMethods"] = {};
 
   var possibleVariables = inputFileContents.variableStatements;
 
@@ -460,17 +460,18 @@ export function getPossibleClassMethods(inputFileContents: FileContents,
   inputFileContents.classDeclarations.forEach((classDeclaration) => {
     if (classObjectInstantiated(classDeclaration, inputFileContents)) {
       // If you want to consider the instance methods even if the class has not been instantiated, then move this outside of the if statement
-      possibleClassMethods["mapClassToInstanceMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables,
+      possibleMethodsAndVariables["mapClassToInstanceMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables,
                                                                                                       classDeclaration.methods.instanceMethods,
                                                                                                       outputFileContents.variableStatements);
     }
-    possibleClassMethods["mapClassToStaticMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables,
+    possibleMethodsAndVariables["mapClassToStaticMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables,
                                                                                                   classDeclaration.methods.staticMethods,
                                                                                                   outputFileContents.variableStatements);
   });
 
-  possibleClassMethods["possibleFunctions"] = getPossibleFunctions(possibleVariables,
+  possibleMethodsAndVariables["possibleVariables"] = possibleVariables;
+  possibleMethodsAndVariables["possibleFunctions"] = getPossibleFunctions(possibleVariables,
                                                                    inputFileContents.functionDeclarations,
                                                                    outputFileContents.variableStatements);
-  return possibleClassMethods;
+  return possibleMethodsAndVariables;
 }
