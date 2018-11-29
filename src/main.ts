@@ -1,4 +1,4 @@
-import {getDocEntrys,FileContents,getPossibleFunctions,getPossibleMethodsAndVariables/*,mapVariablesToTypes*/} from "./getTypeInfo";
+import {getDocEntrys,FileContents,getPossibleFunctions,getPossibleMethodsAndVariables,mapVariablesToTypes} from "./getTypeInfo";
 import * as ts from "typescript";
 
 function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
@@ -30,8 +30,41 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
     //                      outputFileContents.variableStatements);
 
     ///////////////////////// Print final output for debugging /////////////////////////
+    /* variableTypeMap Example, if an instance of C has been instantiated:
+        {
+            possibleVariables:
+             { Type1: [ DocEntry, ... ],
+               Type2: [ DocEntry, ... ],
+               ...,
+               C: [ DocEntry, ... ] },
+            mapClassToInstanceTypes: { C: { Type1: [ DocEntry, ... ],
+                                            Type2: [ DocEntry, ... ] } },
+            mapClassToStaticTypes: { C: { Type: [ DocEntry, ... ], ... } }
+        }
+    */
+    /* possibleMethodsAndVariables Example, if an instance of C has been instantiated:
+        { possibleFunctions: [ DocEntry, ... ],
+          mapClassToInstanceMethods: { C: [ DocEntry, ... ] },
+          mapClassToInstanceProperties: { C: [ DocEntry, ... ] },
+          mapClassToStaticMethods: { C: [ DocEntry, ... ] },
+          mapClassToStaticProperties: { C: [ DocEntry, ... ] },
+          possibleVariables: [ DocEntry, ... ]
+        }
+
+    */
+
     let possibleMethodsAndVariables = getPossibleMethodsAndVariables(inputFileContents, outputFileContents);
-    // let variableTypeMap = mapVariablesToTypes(possibleMethodsAndVariables["possibleVariables"]);
+    let variableTypeMap = {};
+    variableTypeMap["possibleVariables"] = mapVariablesToTypes(possibleMethodsAndVariables["possibleVariables"]);
+    variableTypeMap["mapClassToInstanceTypes"] = {};
+    variableTypeMap["mapClassToStaticTypes"] = {};
+    Object.keys(possibleMethodsAndVariables["mapClassToInstanceProperties"]).forEach((key) => {
+        variableTypeMap["mapClassToInstanceTypes"][key] = mapVariablesToTypes(possibleMethodsAndVariables["mapClassToInstanceProperties"][key]);
+    });
+    Object.keys(possibleMethodsAndVariables["mapClassToStaticProperties"]).forEach((key) => {
+        variableTypeMap["mapClassToStaticTypes"][key] = mapVariablesToTypes(possibleMethodsAndVariables["mapClassToStaticProperties"][key]);
+    });
+
     console.log(possibleMethodsAndVariables);
     console.log(possibleMethodsAndVariables["possibleFunctions"]);
     console.log(possibleMethodsAndVariables["mapClassToInstanceMethods"]);
@@ -39,7 +72,9 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
     console.log(possibleMethodsAndVariables["possibleVariables"]);
     console.log(possibleMethodsAndVariables["mapClassToInstanceProperties"]);
     console.log(possibleMethodsAndVariables["mapClassToStaticProperties"]);
-    // console.log(variableTypeMap);
+    console.log(variableTypeMap);
+    console.log(variableTypeMap["mapClassToInstanceTypes"]["C"]);
+    console.log(variableTypeMap["mapClassToStaticTypes"]["C"]);
     ////////////////////////////////// END DEBUGGING //////////////////////////////////
 
 

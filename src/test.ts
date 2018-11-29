@@ -11,6 +11,7 @@ export class C {
 
     public pubValue:number;
     private privValue:string;
+    public static forAll:number;
 
     public static addNewDemonstration(demonstration:string):boolean{
         return true;
