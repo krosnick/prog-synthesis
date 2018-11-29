@@ -72,8 +72,7 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles) {
         else if (ts.isVariableStatement(node)) {
             // Process variable statements (e.g., for example input/output code)
             var symbol = checker.getSymbolAtLocation(node.declarationList.declarations[0].name);
-            var varDocEntry = serializeVariable(symbol);
-            //console.log(varDocEntry.name);
+            var varDocEntry = serializeVariable(symbol, node);
             fileContents.variableStatements.push(varDocEntry);
         }
         else if (ts.isFunctionDeclaration(node)) {
@@ -87,11 +86,6 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles) {
                 var classEntries = serializeClass(symbol);
                 classEntries.forEach(function (entry) {
                     fileContents.interfaceDeclarations.push(entry);
-                    //console.log(entry.name);
-                    /*if(entry.name === "Date"){
-                      //console.log(entry);
-                      console.log(node);
-                    }*/
                 });
             }
         }
@@ -105,12 +99,37 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles) {
             type: checker.typeToString(checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration))
         };
     }
-    function serializeVariable(symbol) {
+    function serializeVariable(symbol, node) {
         var symbolDetails = serializeSymbol(symbol);
+        /*if(symbol.valueDeclaration["initializer"]["text"]){ // probably a primitive, has "text" property
+          symbolDetails.value = symbol.valueDeclaration["initializer"]["text"]; // works for primitives
+          //console.log(symbolDetails.value);
+        }else if(symbol.valueDeclaration["initializer"]["symbol"]){
+          // assume has property "members"
+          symbolDetails.value = symbol.valueDeclaration["initializer"]["symbol"]["members"].toString();
+          //console.log(symbolDetails.value);
+        }else{
+          console.log("Shouldn't get here");
+          //console.log(symbol);
+          //console.log(symbol.toString());
+          //console.log(symbol.valueDeclaration["initializer"]["elements"]);
+          // seems to be issue with type "boolean"
+        }*/
+        //symbolDetails.value = symbol.valueDeclaration["initializer"]["text"]; // works for primitives
+        //console.log(symbolDetails.value); // works for primitives
+        //console.log(symbol);
+        //console.log(symbol.valueDeclaration["initializer"]["symbol"]);
+        //console.log(symbol.valueDeclaration["initializer"]["symbol"]["members"]);
         var symType = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration);
         symbolDetails.signatureInfo = symType
             .getCallSignatures()
             .map(serializeSignature);
+        var codeLine = node.getText();
+        var indexOfEqualSign = codeLine.indexOf("=") + 1;
+        var indexOfSemicolon = codeLine.indexOf(";");
+        var valueString = codeLine.substring(indexOfEqualSign, indexOfSemicolon).trim();
+        var varValue = eval("(" + valueString + ")");
+        symbolDetails.value = varValue;
         return symbolDetails;
     }
     function serializeFunction(symbol) {
@@ -124,7 +143,6 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles) {
             symbolDetails.signatureInfo = sigInfo;
         }
         detailsList.push(symbolDetails);
-        //console.log(symbolDetails.name);
         return detailsList;
     }
     /** Serialize a class symbol information */
@@ -190,15 +208,11 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles) {
             "instanceMethods": memberMethodsProperties.methods,
             "staticMethods": staticMethodsProperties.methods
         };
-        /*console.log("constructorDetails.methods");
-        console.log(constructorDetails.methods);*/
         //constructorDetails.properties = memberMethodsProperties.properties;
         constructorDetails.properties = {
             "instanceProperties": memberMethodsProperties.properties,
             "staticProperties": staticMethodsProperties.properties
         };
-        /*console.log("constructorDetails.properties");
-        console.log(constructorDetails.properties);*/
         return detailsList;
     }
     // Create DocEntry lists of methods and properties from the UnderscoreEscapedMap object
@@ -313,9 +327,6 @@ function addCandidateFunction(candidateVariables, candidateFunction, outputDE, p
     }
 }
 function getPossibleFunctions(candidateVariables, candidateFunctions, outputDE) {
-    // console.log(candidateVariables);
-    // console.log(candidateFunctions);
-    // console.log(outputDE);
     var possibleFunctions = [];
     candidateFunctions.forEach(function (candidateFunction) {
         addCandidateFunction(candidateVariables, candidateFunction, outputDE, possibleFunctions);

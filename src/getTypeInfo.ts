@@ -20,6 +20,7 @@ export interface DocEntry {
   signatureInfo?: DocEntry[];
   parameters?: DocEntry[];
   returnType?: string;
+  value?;
 }
 
 export interface FileContents{
@@ -108,8 +109,7 @@ export function getDocEntrys(
     } else if(ts.isVariableStatement(node)){
       // Process variable statements (e.g., for example input/output code)
       let symbol = checker.getSymbolAtLocation(node.declarationList.declarations[0].name);
-      const varDocEntry:DocEntry = serializeVariable(symbol);
-      //console.log(varDocEntry.name);
+      const varDocEntry:DocEntry = serializeVariable(symbol, node);
       fileContents.variableStatements.push(varDocEntry);
     } else if(ts.isFunctionDeclaration(node)) {
       let symbol = checker.getSymbolAtLocation(node.name)
@@ -121,11 +121,6 @@ export function getDocEntrys(
         const classEntries:DocEntry[] = serializeClass(symbol);
         classEntries.forEach(function(entry){
           fileContents.interfaceDeclarations.push(entry);
-          //console.log(entry.name);
-          /*if(entry.name === "Date"){
-            //console.log(entry);
-            console.log(node);
-          }*/
         });
       }
     }else{
@@ -142,8 +137,29 @@ export function getDocEntrys(
     };
   }
 
-  function serializeVariable(symbol: ts.Symbol){
+  function serializeVariable(symbol: ts.Symbol, node: ts.Node){
     let symbolDetails = serializeSymbol(symbol);
+
+    /*if(symbol.valueDeclaration["initializer"]["text"]){ // probably a primitive, has "text" property 
+      symbolDetails.value = symbol.valueDeclaration["initializer"]["text"]; // works for primitives
+      //console.log(symbolDetails.value);
+    }else if(symbol.valueDeclaration["initializer"]["symbol"]){
+      // assume has property "members"
+      symbolDetails.value = symbol.valueDeclaration["initializer"]["symbol"]["members"].toString();
+      //console.log(symbolDetails.value);
+    }else{
+      console.log("Shouldn't get here");
+      //console.log(symbol);
+      //console.log(symbol.toString());
+      //console.log(symbol.valueDeclaration["initializer"]["elements"]);
+      // seems to be issue with type "boolean"
+    }*/
+
+    //symbolDetails.value = symbol.valueDeclaration["initializer"]["text"]; // works for primitives
+    //console.log(symbolDetails.value); // works for primitives
+    //console.log(symbol);
+    //console.log(symbol.valueDeclaration["initializer"]["symbol"]);
+    //console.log(symbol.valueDeclaration["initializer"]["symbol"]["members"]);
     let symType = checker.getTypeOfSymbolAtLocation(
       symbol,
       symbol.valueDeclaration!
@@ -151,6 +167,14 @@ export function getDocEntrys(
     symbolDetails.signatureInfo = symType
       .getCallSignatures()
       .map(serializeSignature);
+
+    const codeLine:string = node.getText();
+    const indexOfEqualSign:number = codeLine.indexOf("=") + 1;
+    const indexOfSemicolon:number = codeLine.indexOf(";");
+    const valueString:string = codeLine.substring(indexOfEqualSign, indexOfSemicolon).trim();
+    const varValue = eval("(" + valueString + ")");
+    symbolDetails.value = varValue;
+
     return symbolDetails;
   }
 
@@ -171,7 +195,6 @@ export function getDocEntrys(
     }
 
     detailsList.push(symbolDetails);
-    //console.log(symbolDetails.name);
 
     return detailsList;
   }
@@ -256,15 +279,11 @@ export function getDocEntrys(
       "instanceMethods": memberMethodsProperties.methods,
       "staticMethods": staticMethodsProperties.methods
     };
-    /*console.log("constructorDetails.methods");
-    console.log(constructorDetails.methods);*/
     //constructorDetails.properties = memberMethodsProperties.properties;
     constructorDetails.properties = {
       "instanceProperties": memberMethodsProperties.properties,
       "staticProperties": staticMethodsProperties.properties
     };
-    /*console.log("constructorDetails.properties");
-    console.log(constructorDetails.properties);*/
     return detailsList;
   }
 
@@ -399,9 +418,6 @@ function addCandidateFunction(candidateVariables: DocEntry[],
 export function getPossibleFunctions(candidateVariables: DocEntry[],
                                      candidateFunctions: DocEntry[],
                                      outputDE: DocEntry[]) {
-  // console.log(candidateVariables);
-  // console.log(candidateFunctions);
-  // console.log(outputDE);
   var possibleFunctions = [];
   candidateFunctions.forEach((candidateFunction) => {
     addCandidateFunction(candidateVariables, candidateFunction, outputDE, possibleFunctions);

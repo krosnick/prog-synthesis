@@ -3,6 +3,8 @@ import {C} from "./../test";
 
 const numToWord:{[num:number]:string} = {1: "one", 2: "two", 3: "three"};
 const byeVar:string = 'bye';
+const numVar:number = 1001;
+const myArr:number[] = [1,5,3,7];
 // const myClass:C = new C("hello");
 
 function addTwoNumbers(a:number, b:number):number { return a + b; };
