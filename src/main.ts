@@ -1,4 +1,4 @@
-import {getDocEntrys,FileContents,getPossibleFunctions,getPossibleClassMethods} from "./getTypeInfo";
+import {getDocEntrys,FileContents,getPossibleFunctions,getPossibleMethodsAndVariables/*,mapVariablesToTypes*/} from "./getTypeInfo";
 import * as ts from "typescript";
 
 function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
@@ -6,7 +6,7 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
     const inputFileContents:FileContents = getDocEntrys([fileNameRequiredInput], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
-    }, true);
+    }, false);
     //}, false);
     console.log("inputFileContents");
     console.log(inputFileContents);
@@ -24,16 +24,24 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
     }, true);*/
-    
+
     // getPossibleFunctions(inputFileContents.variableStatements,
     //                      inputFileContents.functionDeclarations,
     //                      outputFileContents.variableStatements);
-    let possibleClassMethods = getPossibleClassMethods(inputFileContents, outputFileContents);
-    // Print final output for debugging
-    console.log(possibleClassMethods);
-    console.log(possibleClassMethods["possibleFunctions"]);
-    console.log(possibleClassMethods["mapClassToInstanceMethods"]);
-    console.log(possibleClassMethods["mapClassToStaticMethods"]);
+
+    ///////////////////////// Print final output for debugging /////////////////////////
+    let possibleMethodsAndVariables = getPossibleMethodsAndVariables(inputFileContents, outputFileContents);
+    // let variableTypeMap = mapVariablesToTypes(possibleMethodsAndVariables["possibleVariables"]);
+    console.log(possibleMethodsAndVariables);
+    console.log(possibleMethodsAndVariables["possibleFunctions"]);
+    console.log(possibleMethodsAndVariables["mapClassToInstanceMethods"]);
+    console.log(possibleMethodsAndVariables["mapClassToStaticMethods"]);
+    console.log(possibleMethodsAndVariables["possibleVariables"]);
+    console.log(possibleMethodsAndVariables["mapClassToInstanceProperties"]);
+    console.log(possibleMethodsAndVariables["mapClassToStaticProperties"]);
+    // console.log(variableTypeMap);
+    ////////////////////////////////// END DEBUGGING //////////////////////////////////
+
 
     // Process native JS/TS (from lib.d.ts) and imported files (from fileNameRequiredInput)
         // Save functions as DocEntry[]

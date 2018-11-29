@@ -320,7 +320,7 @@ function addCandidateFunction(candidateVariables, candidateFunction, outputDE, p
             // Consider output values
             if (typesMatch(candidateFunction.signatureInfo[0].returnType, outputDE[0].type) &&
                 paramsAcceptable(candidateFunction.signatureInfo[0], candidateVariables)) {
-                // Modifies the list in the caller's scope
+                // Modifies the list in the caller's scope, since possibleFunctions passed in
                 possibleFunctions.push(candidateFunction);
             }
         }
@@ -331,29 +331,9 @@ function getPossibleFunctions(candidateVariables, candidateFunctions, outputDE) 
     candidateFunctions.forEach(function (candidateFunction) {
         addCandidateFunction(candidateVariables, candidateFunction, outputDE, possibleFunctions);
     });
-    // candidateClasses.forEach((candidateClass) => {
-    //   candidateClass.constructors.forEach((constructor) => {
-    //     // TODO, handle constructors
-    //     console.log("TODO: Handle Constructors as candidates");
-    //   });
-    //   candidateClass.methods.forEach((method) => {
-    //     console.log("considering: ");
-    //     console.log(method);
-    //     addCandidateFunction(candidateVariables, method, outputDE, possibleFunctions);
-    //   });
-    // });
-    // candidateFunctions.forEach((candidateFunction) => {
-    //   addCandidateFunction(candidateFunction);
-    // });
     console.log("POSSIBLE FUNCTIONS: ");
     console.log(possibleFunctions);
     return possibleFunctions;
-    // possibleFunctions.forEach((possibleFunction) => {
-    //   console.log(possibleFunction);
-    //   possibleFunction.signatureInfo.forEach((param) => {
-    //     console.log(param);
-    //   });
-    // });
 }
 exports.getPossibleFunctions = getPossibleFunctions;
 function classObjectInstantiated(classDeclaration, inputFileContents) {
@@ -365,26 +345,46 @@ function classObjectInstantiated(classDeclaration, inputFileContents) {
     });
     return instance_found;
 }
-function getPossibleClassMethods(inputFileContents, outputFileContents) {
-    var possibleClassMethods = {};
-    possibleClassMethods["possibleFunctions"] = [];
-    possibleClassMethods["mapClassToInstanceMethods"] = {};
-    possibleClassMethods["mapClassToStaticMethods"] = {};
+function getPossibleMethodsAndVariables(inputFileContents, outputFileContents) {
+    var possibleMethodsAndVariables = {};
+    possibleMethodsAndVariables["possibleFunctions"] = [];
+    possibleMethodsAndVariables["mapClassToInstanceMethods"] = {};
+    possibleMethodsAndVariables["mapClassToInstanceProperties"] = {};
+    possibleMethodsAndVariables["mapClassToStaticMethods"] = {};
+    possibleMethodsAndVariables["mapClassToStaticProperties"] = {};
     var possibleVariables = inputFileContents.variableStatements;
+    possibleMethodsAndVariables["possibleVariables"] = inputFileContents.variableStatements;
     inputFileContents.classDeclarations.forEach(function (classDeclaration) {
         if (classObjectInstantiated(classDeclaration, inputFileContents)) {
             possibleVariables = possibleVariables.concat(classDeclaration.properties.instanceProperties);
+            possibleMethodsAndVariables["mapClassToInstanceProperties"][classDeclaration.name] = classDeclaration.properties.instanceProperties;
         }
         possibleVariables = possibleVariables.concat(classDeclaration.properties.staticProperties);
+        possibleMethodsAndVariables["mapClassToStaticProperties"][classDeclaration.name] = classDeclaration.properties.staticProperties;
     });
     inputFileContents.classDeclarations.forEach(function (classDeclaration) {
         if (classObjectInstantiated(classDeclaration, inputFileContents)) {
             // If you want to consider the instance methods even if the class has not been instantiated, then move this outside of the if statement
-            possibleClassMethods["mapClassToInstanceMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables, classDeclaration.methods.instanceMethods, outputFileContents.variableStatements);
+            possibleMethodsAndVariables["mapClassToInstanceMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables, classDeclaration.methods.instanceMethods, outputFileContents.variableStatements);
         }
-        possibleClassMethods["mapClassToStaticMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables, classDeclaration.methods.staticMethods, outputFileContents.variableStatements);
+        possibleMethodsAndVariables["mapClassToStaticMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables, classDeclaration.methods.staticMethods, outputFileContents.variableStatements);
     });
-    possibleClassMethods["possibleFunctions"] = getPossibleFunctions(possibleVariables, inputFileContents.functionDeclarations, outputFileContents.variableStatements);
-    return possibleClassMethods;
+    // possibleMethodsAndVariables["possibleVariables"] = possibleVariables;
+    possibleMethodsAndVariables["possibleFunctions"] = getPossibleFunctions(possibleVariables, inputFileContents.functionDeclarations, outputFileContents.variableStatements);
+    return possibleMethodsAndVariables;
 }
-exports.getPossibleClassMethods = getPossibleClassMethods;
+exports.getPossibleMethodsAndVariables = getPossibleMethodsAndVariables;
+// export function mapVariablesToTypes(variablesArray) {
+//   let variableTypeMap = {}
+//   variablesArray.forEach((variable) => {
+//     if ("type" in variable) {
+//       if (!(variable.type in variableTypeMap)) {
+//         variableTypeMap[variable.type] = [];
+//       }
+//       // variable is a DocEntry, if you do not need all the extra data,
+//       // just push variable.name to the variableTypeMap
+//       variableTypeMap[variable.type].push(variable);
+//     }
+//   });
+//   return variableTypeMap;
+// }
