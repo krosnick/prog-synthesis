@@ -45,6 +45,21 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     // For the desired output type and the input types available,
     // search the DocEntry[]s for appropriate functions/classes/variables
 }
+function findSolution(outputVar, possibleMethodsAndVariables) {
+    var possibleFunctions = possibleMethodsAndVariables["possibleFunctions"];
+    for (var i = 0; i < possibleFunctions.length; i++) {
+        var funcObject = possibleFunctions[i];
+        findSolutionWithGivenFunction(outputVar, funcObject);
+    }
+    var mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
+    var mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
+}
+function findSolutionWithGivenFunction(outputVar, funcDocEntry) {
+}
+function findSolutionWithGivenInstanceMethod(outputVar, funcDocEntry) {
+}
+function findSolutionWithGivenStaticMethod(outputVar, funcDocEntry) {
+}
 /*const inputArgs:string[] = process.argv;
 const fileNameRequiredInput:string = inputArgs.slice(2, 3)[0];
 const fileNameRequiredOutput:string = inputArgs.slice(3)[0];*/

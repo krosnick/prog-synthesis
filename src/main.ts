@@ -1,4 +1,5 @@
-import {getDocEntrys,FileContents,getPossibleFunctions,getPossibleMethodsAndVariables/*,mapVariablesToTypes*/} from "./getTypeInfo";
+import {getDocEntrys,FileContents,getPossibleFunctions,getPossibleMethodsAndVariables,/*,mapVariablesToTypes*/
+DocEntry} from "./getTypeInfo";
 import * as ts from "typescript";
 
 function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
@@ -50,6 +51,32 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
 
     // For the desired output type and the input types available,
         // search the DocEntry[]s for appropriate functions/classes/variables
+
+}
+
+function findSolution(outputVar:DocEntry, possibleMethodsAndVariables){
+    const possibleFunctions = possibleMethodsAndVariables["possibleFunctions"];
+    for(let i = 0; i < possibleFunctions.length; i++){
+        const funcObject = possibleFunctions[i];
+        findSolutionWithGivenFunction(outputVar, funcObject);
+    }
+
+    const mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
+    
+
+    const mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
+
+}
+
+function findSolutionWithGivenFunction(outputVar:DocEntry, funcDocEntry:DocEntry){
+
+}
+
+function findSolutionWithGivenInstanceMethod(outputVar:DocEntry, funcDocEntry:DocEntry){
+
+}
+
+function findSolutionWithGivenStaticMethod(outputVar:DocEntry, funcDocEntry:DocEntry){
 
 }
 
