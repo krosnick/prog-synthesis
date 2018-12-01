@@ -20,6 +20,7 @@ export interface DocEntry {
   signatureInfo?: DocEntry[];
   parameters?: DocEntry[];
   returnType?: string;
+  value?;
 }
 
 export interface FileContents{
@@ -108,8 +109,8 @@ export function getDocEntrys(
     } else if(ts.isVariableStatement(node)){
       // Process variable statements (e.g., for example input/output code)
       let symbol = checker.getSymbolAtLocation(node.declarationList.declarations[0].name);
-      const varDocEntry:DocEntry = serializeVariable(symbol);
       //console.log(varDocEntry.name);
+      const varDocEntry:DocEntry = serializeVariable(symbol, node);
       fileContents.variableStatements.push(varDocEntry);
     } else if(ts.isFunctionDeclaration(node)) {
       let symbol = checker.getSymbolAtLocation(node.name)
@@ -142,8 +143,29 @@ export function getDocEntrys(
     };
   }
 
-  function serializeVariable(symbol: ts.Symbol){
+  function serializeVariable(symbol: ts.Symbol, node: ts.Node){
     let symbolDetails = serializeSymbol(symbol);
+    
+    /*if(symbol.valueDeclaration["initializer"]["text"]){ // probably a primitive, has "text" property 
+      symbolDetails.value = symbol.valueDeclaration["initializer"]["text"]; // works for primitives
+      //console.log(symbolDetails.value);
+    }else if(symbol.valueDeclaration["initializer"]["symbol"]){
+      // assume has property "members"
+      symbolDetails.value = symbol.valueDeclaration["initializer"]["symbol"]["members"].toString();
+      //console.log(symbolDetails.value);
+    }else{
+      console.log("Shouldn't get here");
+      //console.log(symbol);
+      //console.log(symbol.toString());
+      //console.log(symbol.valueDeclaration["initializer"]["elements"]);
+      // seems to be issue with type "boolean"
+    }*/
+    //symbolDetails.value = symbol.valueDeclaration["initializer"]["text"]; // works for primitives
+    //console.log(symbolDetails.value); // works for primitives
+    //console.log(symbol);
+    //console.log(symbol.valueDeclaration["initializer"]["symbol"]);
+    //console.log(symbol.valueDeclaration["initializer"]["symbol"]["members"]);
+
     let symType = checker.getTypeOfSymbolAtLocation(
       symbol,
       symbol.valueDeclaration!
@@ -151,6 +173,15 @@ export function getDocEntrys(
     symbolDetails.signatureInfo = symType
       .getCallSignatures()
       .map(serializeSignature);
+
+      
+    const codeLine:string = node.getText();
+    const indexOfEqualSign:number = codeLine.indexOf("=") + 1;
+    const indexOfSemicolon:number = codeLine.indexOf(";");
+    const valueString:string = codeLine.substring(indexOfEqualSign, indexOfSemicolon).trim();
+    const varValue = eval("(" + valueString + ")");
+    symbolDetails.value = varValue;
+
     return symbolDetails;
   }
 
