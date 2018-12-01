@@ -88,6 +88,11 @@ function findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap) {
     var mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
 }
 function findSolutionWithGivenFunction(outputVar, funcDocEntry, variableTypeMap) {
+    var candidateFuncName = funcDocEntry.name;
+    var argValCombos = []; // Replace with helper function call
+    var validArgValCombos = []; // add combos here that correctly eval to outputVar
+    argValCombos.forEach(function (combo) {
+    });
 }
 function findSolutionWithGivenInstanceMethod(outputVar, funcDocEntry) {
 }

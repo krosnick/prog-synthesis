@@ -103,7 +103,12 @@ function findSolution(outputVar:DocEntry, possibleMethodsAndVariables, variableT
 }
 
 function findSolutionWithGivenFunction(outputVar:DocEntry, funcDocEntry:DocEntry, variableTypeMap){
-    
+    const candidateFuncName = funcDocEntry.name;
+    const argValCombos:({name:string, val:any})[] = []; // Replace with helper function call
+    const validArgValCombos:(DocEntry[])[] = []; // add combos here that correctly eval to outputVar
+    argValCombos.forEach(function(combo){
+        
+    });
 }
 
 function findSolutionWithGivenInstanceMethod(outputVar:DocEntry, funcDocEntry:DocEntry){
