@@ -472,3 +472,14 @@ export function mapVariablesToTypes(variablesArray) {
   });
   return variableTypeMap;
 }
+
+export function getParameterPermutations(variableTypeMap) {
+  let consolidatedVariables = {};
+  Object.keys(variableTypeMap.possibleVariables).forEach((key) => {
+    variableTypeMap.possibleVariables[key].forEach((variable) => {
+      let varEntry = {};
+      varEntry["name"] = variable.name;
+      consolidatedVariables[key].push();
+    });
+  });
+}

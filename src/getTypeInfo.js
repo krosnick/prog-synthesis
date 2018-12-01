@@ -375,3 +375,14 @@ function mapVariablesToTypes(variablesArray) {
     return variableTypeMap;
 }
 exports.mapVariablesToTypes = mapVariablesToTypes;
+function getParameterPermutations(variableTypeMap) {
+    var consolidatedVariables = {};
+    Object.keys(variableTypeMap.possibleVariables).forEach(function (key) {
+        variableTypeMap.possibleVariables[key].forEach(function (variable) {
+            var varEntry = {};
+            varEntry["name"] = variable.name;
+            consolidatedVariables[key].push();
+        });
+    });
+}
+exports.getParameterPermutations = getParameterPermutations;
