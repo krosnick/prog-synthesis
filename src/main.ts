@@ -88,11 +88,11 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
 
 }
 
-function findSolution(outputVar:DocEntry, possibleMethodsAndVariables){
+function findSolution(outputVar:DocEntry, possibleMethodsAndVariables, variableTypeMap){
     const possibleFunctions = possibleMethodsAndVariables["possibleFunctions"];
     for(let i = 0; i < possibleFunctions.length; i++){
         const funcObject = possibleFunctions[i];
-        findSolutionWithGivenFunction(outputVar, funcObject);
+        findSolutionWithGivenFunction(outputVar, funcObject, variableTypeMap);
     }
 
     const mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
@@ -102,8 +102,8 @@ function findSolution(outputVar:DocEntry, possibleMethodsAndVariables){
 
 }
 
-function findSolutionWithGivenFunction(outputVar:DocEntry, funcDocEntry:DocEntry){
-
+function findSolutionWithGivenFunction(outputVar:DocEntry, funcDocEntry:DocEntry, variableTypeMap){
+    
 }
 
 function findSolutionWithGivenInstanceMethod(outputVar:DocEntry, funcDocEntry:DocEntry){

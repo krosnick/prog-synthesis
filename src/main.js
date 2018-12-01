@@ -78,16 +78,16 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     // For the desired output type and the input types available,
     // search the DocEntry[]s for appropriate functions/classes/variables
 }
-function findSolution(outputVar, possibleMethodsAndVariables) {
+function findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap) {
     var possibleFunctions = possibleMethodsAndVariables["possibleFunctions"];
     for (var i = 0; i < possibleFunctions.length; i++) {
         var funcObject = possibleFunctions[i];
-        findSolutionWithGivenFunction(outputVar, funcObject);
+        findSolutionWithGivenFunction(outputVar, funcObject, variableTypeMap);
     }
     var mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
     var mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
 }
-function findSolutionWithGivenFunction(outputVar, funcDocEntry) {
+function findSolutionWithGivenFunction(outputVar, funcDocEntry, variableTypeMap) {
 }
 function findSolutionWithGivenInstanceMethod(outputVar, funcDocEntry) {
 }
