@@ -1,30 +1,28 @@
+"use strict";
+exports.__esModule = true;
 /**
  * Documentation for C
  */
-export class C {
+var C = /** @class */ (function () {
     /**
      * constructor documentation
      * @param a my parameter documentation
      * @param b another parameter documentation
      */
-    constructor(a: string) {
+    function C(a) {
         this.pubValue = a.length * 100;
     }
-
-    public pubValue:number;
-    private privValue:string;
     //public static forAll:number = 200;
     //public forAll:number = 200;
-
-    public static addNewDemonstration(demonstration:string):boolean{
+    C.addNewDemonstration = function (demonstration) {
         return true;
-    }
-
-    public testFunc(str:string):boolean{
+    };
+    C.prototype.testFunc = function (str) {
         return true;
-    }
-}
+    };
+    return C;
+}());
+exports.C = C;
 //C["forAll"] = 200;
-
 C.addNewDemonstration('hello');
 //C.testFunc('asdf');

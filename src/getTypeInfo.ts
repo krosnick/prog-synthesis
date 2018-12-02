@@ -1,6 +1,9 @@
 // Adapted from https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
 
 import * as ts from "typescript";
+//import {C} from "./test";
+import * as userDefinedClasses from "./test";
+import { nonStrictEval } from "./nonStrictEval";
 //import * as fs from "fs";
 
 export interface DocEntry {
@@ -40,10 +43,10 @@ export function getDocEntrys(
 
   // Build a program using the set of root file names in fileNames
   let program = ts.createProgram(fileNames, options);
-
+  
   // Get the checker, we will use it to find more about classes
   let checker = program.getTypeChecker();
-
+  
   let fileContents:FileContents = {
     classDeclarations: [],
     interfaceDeclarations: [],
@@ -174,13 +177,52 @@ export function getDocEntrys(
       .getCallSignatures()
       .map(serializeSignature);
 
+    /*const memberMethodsProperties:{
+      methods: DocEntry[];
+      properties: DocEntry[];
+    } = processMethodsAndProperties(symbol.members);
+
+    const staticMethodsProperties:{
+      methods: DocEntry[];
+      properties: DocEntry[];
+    } = processMethodsAndProperties(symbol.exports);*/
+    //console.log(symbol.declarations);
+    //console.log(symbol.valueDeclaration);
+    //console.log(symbol.valueDeclaration["symbol"]);
+    //console.log(symbol.valueDeclaration["initializer"]["expression"]);
+    
       
     const codeLine:string = node.getText();
     const indexOfEqualSign:number = codeLine.indexOf("=") + 1;
     const indexOfSemicolon:number = codeLine.indexOf(";");
     const valueString:string = codeLine.substring(indexOfEqualSign, indexOfSemicolon).trim();
-    const varValue = eval("(" + valueString + ")");
-    symbolDetails.value = varValue;
+    
+    if(valueString === 'new C("hello")'){
+      const classType = nonStrictEval(userDefinedClasses["C"]);
+      const classInstance = new classType("hello");
+      symbolDetails.value = classInstance;
+    }else{
+      const varValue = eval("(" + valueString + ")");
+      symbolDetails.value = varValue;
+    }
+    //console.log(symbolDetails.value);
+    //console.log(typeof symbolDetails.value);
+
+    /*const classType = nonStrictEval(userDefinedClasses["C"]);
+    console.log(classType);
+    const classInstance = new classType('test');
+    console.log(classInstance);
+    
+    console.log(Object.keys(classInstance));*/
+
+    /*if((typeof symbolDetails.value) === "object"){
+      //console.log(Object.keys(symbolDetails.value));
+      //console.log(Object.getOwnPropertyDescriptors(symbolDetails.value));
+    }*/
+
+    //console.log(symbolDetails);
+
+    // call serializeVariable on class's keys?
 
     return symbolDetails;
   }
@@ -434,16 +476,22 @@ export function getPossibleFunctions(candidateVariables: DocEntry[],
   candidateFunctions.forEach((candidateFunction) => {
     addCandidateFunction(candidateVariables, candidateFunction, outputDE, possibleFunctions);
   });
-  console.log("POSSIBLE FUNCTIONS: ");
-  console.log(possibleFunctions);
+  /*console.log("POSSIBLE FUNCTIONS: ");
+  console.log(possibleFunctions);*/
   return possibleFunctions;
 }
 
 function classObjectInstantiated(classDeclaration, inputFileContents) {
-  var instance_found = false;
+  //var instance_found = false;
+  var instance_found = undefined;
   inputFileContents.variableStatements.forEach((variable) => {
     if (variable.type === classDeclaration.name) {
-      instance_found = true;
+      //console.log("variable.value");
+      //console.log(variable.value);
+      //console.log(variable.value["pubValue"]);
+      //console.log(variable.value["forAll"]);
+      //instance_found = true;
+      instance_found = variable;
     }
   });
   return instance_found;
@@ -462,16 +510,49 @@ export function getPossibleMethodsAndVariables(inputFileContents: FileContents,
   possibleMethodsAndVariables["possibleVariables"] = inputFileContents.variableStatements;
 
   inputFileContents.classDeclarations.forEach((classDeclaration) => {
-    if (classObjectInstantiated(classDeclaration, inputFileContents)) {
+    const objectInstantiation = classObjectInstantiated(classDeclaration, inputFileContents);
+    //if (classObjectInstantiated(classDeclaration, inputFileContents)) {
+    
+    /*if(objectInstantiation !== undefined){
+      //console.log("classDeclaration.value");
+      //console.log(classDeclaration.value);
+      //console.log(objectInstantiation.value);
       possibleVariables = possibleVariables.concat(classDeclaration.properties.instanceProperties);
       possibleMethodsAndVariables["mapClassToInstanceProperties"][classDeclaration.name] = classDeclaration.properties.instanceProperties;
     }
     possibleVariables = possibleVariables.concat(classDeclaration.properties.staticProperties);
     possibleMethodsAndVariables["mapClassToStaticProperties"][classDeclaration.name] = classDeclaration.properties.staticProperties;
+    */
+
+    if(objectInstantiation && objectInstantiation.value){
+      // If it does have a value, use that for determining values of instance + static properties
+      
+      // For both classDeclaration.properties.instanceProperties and classDeclaration.properties.staticProperties
+        // Try accessing the property name in objectInstantiation.value to get the value
+
+      const objectValue = objectInstantiation.value;
+      console.log("objectValue");
+      console.log(objectValue);
+      classDeclaration.properties.instanceProperties.forEach(function(property:DocEntry){
+        //console.log(property.name);
+        //console.log(objectValue[property.name]);
+        property.value = objectValue[property.name];
+        console.log(property);
+      });
+      
+      // Instance properties only accessible when the class object is instantiated (as it is here)
+      possibleVariables = possibleVariables.concat(classDeclaration.properties.instanceProperties);
+      possibleMethodsAndVariables["mapClassToInstanceProperties"][classDeclaration.name] = classDeclaration.properties.instanceProperties;
+    } 
+
+    // Do regardless (if there are static properties, they should always be accessible)
+    possibleVariables = possibleVariables.concat(classDeclaration.properties.staticProperties);
+    possibleMethodsAndVariables["mapClassToStaticProperties"][classDeclaration.name] = classDeclaration.properties.staticProperties;
   });
 
   inputFileContents.classDeclarations.forEach((classDeclaration) => {
-    if (classObjectInstantiated(classDeclaration, inputFileContents)) {
+    //if (classObjectInstantiated(classDeclaration, inputFileContents)) {
+    if(classObjectInstantiated(classDeclaration, inputFileContents) !== undefined) {
       // If you want to consider the instance methods even if the class has not been instantiated, then move this outside of the if statement
       possibleMethodsAndVariables["mapClassToInstanceMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables,
                                                                                                       classDeclaration.methods.instanceMethods,
@@ -490,6 +571,7 @@ export function getPossibleMethodsAndVariables(inputFileContents: FileContents,
 }
 
 export function mapVariablesToTypes(variablesArray) {
+  //console.log(variablesArray);
   let variableTypeMap = {}
   variablesArray.forEach((variable) => {
     if ("type" in variable) {

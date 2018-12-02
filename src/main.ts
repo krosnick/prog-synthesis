@@ -1,5 +1,8 @@
 import {getDocEntrys,FileContents,getPossibleFunctions,getPossibleMethodsAndVariables,mapVariablesToTypes, DocEntry} from "./getTypeInfo";
 import * as ts from "typescript";
+import * as exampleInput from "./data/exampleInput";
+import {nonStrictEval} from "./nonStrictEval";
+//const nonStrictEval = require('./nonStrictEval');
 
 function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
     // Process required input; save as DocEntry[]
@@ -59,13 +62,15 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
     variableTypeMap["mapClassToInstanceTypes"] = {};
     variableTypeMap["mapClassToStaticTypes"] = {};
     Object.keys(possibleMethodsAndVariables["mapClassToInstanceProperties"]).forEach((key) => {
+        //console.log(key);
         variableTypeMap["mapClassToInstanceTypes"][key] = mapVariablesToTypes(possibleMethodsAndVariables["mapClassToInstanceProperties"][key]);
     });
     Object.keys(possibleMethodsAndVariables["mapClassToStaticProperties"]).forEach((key) => {
+        //console.log(key);
         variableTypeMap["mapClassToStaticTypes"][key] = mapVariablesToTypes(possibleMethodsAndVariables["mapClassToStaticProperties"][key]);
     });
 
-    console.log(possibleMethodsAndVariables);
+    /*console.log(possibleMethodsAndVariables);
     console.log(possibleMethodsAndVariables["possibleFunctions"]);
     console.log(possibleMethodsAndVariables["mapClassToInstanceMethods"]);
     console.log(possibleMethodsAndVariables["mapClassToStaticMethods"]);
@@ -74,7 +79,10 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
     console.log(possibleMethodsAndVariables["mapClassToStaticProperties"]);
     console.log(variableTypeMap);
     console.log(variableTypeMap["mapClassToInstanceTypes"]["C"]);
-    console.log(variableTypeMap["mapClassToStaticTypes"]["C"]);
+    console.log(variableTypeMap["mapClassToStaticTypes"]["C"]);*/
+    console.log(variableTypeMap);
+    //console.log(variableTypeMap["mapClassToStaticTypes"]["C"]);
+    console.log(variableTypeMap["mapClassToInstanceTypes"]["C"]);
     ////////////////////////////////// END DEBUGGING //////////////////////////////////
 
 
@@ -85,6 +93,8 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
 
     // For the desired output type and the input types available,
         // search the DocEntry[]s for appropriate functions/classes/variables
+
+    findSolutionWithGivenFunction(undefined , undefined, undefined);
 
 }
 
@@ -103,10 +113,34 @@ function findSolution(outputVar:DocEntry, possibleMethodsAndVariables, variableT
 }
 
 function findSolutionWithGivenFunction(outputVar:DocEntry, funcDocEntry:DocEntry, variableTypeMap){
-    const candidateFuncName = funcDocEntry.name;
-    const argValCombos:({name:string, val:any})[] = []; // Replace with helper function call
-    const validArgValCombos:(DocEntry[])[] = []; // add combos here that correctly eval to outputVar
+    //const candidateFuncName = funcDocEntry.name;
+    //const candidateFuncName = "substring";
+    //const candidateFuncName = "Math.pow";
+    
+    const candidateFuncName = "exampleInput." + "addTwoNumbers";
+    //const argValCombos:({name:string, val:any})[][] = []; // Replace with helper function call
+    //const argValCombos:({name:string, val:any})[][] = [[{"name": "str", "val": "testing"}, {"name": "length", "val": 4}]];
+    const argValCombos:({name:string, val:any})[][] = [[{"name": "num", "val": 2}, {"name": "num", "val": 3}]];
+    const validArgValCombos:({name:string, val:any})[][] = []; // add combos here that correctly eval to outputVar
     argValCombos.forEach(function(combo){
+        //let codeString = candidateFuncName + "(";
+        let paramCodeString = "(";
+        for(let paramIndex = 0; paramIndex < combo.length; paramIndex++){
+            paramCodeString += combo[paramIndex].val;
+            if(paramIndex < combo.length-1){
+                paramCodeString += ", ";
+            }
+        }
+        paramCodeString += ")";
+        //console.log(paramCodeString);
+        //console.log(nonStrictEval(exampleInput["addTwoNumbers"]));
+        const argList = [2, 3];
+        //console.log(exampleInput["addTwoNumbers"].apply(this, argList));
+        
+        // need to make sure we can get a function object for something like Math.abs
+        const mathAbs = nonStrictEval("Math.abs");
+        //console.log(mathAbs);
+        //console.log(mathAbs(-3));
         
     });
 }
@@ -117,6 +151,31 @@ function findSolutionWithGivenInstanceMethod(outputVar:DocEntry, funcDocEntry:Do
 
 function findSolutionWithGivenStaticMethod(outputVar:DocEntry, funcDocEntry:DocEntry){
 
+}
+
+function getParameterPermutations(funcDocEntry:DocEntry, variableTypeMap) {
+    
+    // really only need to look at the args used for funcDocEntry
+    
+    // make local consolidatedVariables map that allows us to iterate over all variables,
+    // instanceProperties, and staticProperties in one loop
+    // consolidatedVariables Example:
+    //   {
+    //     number: [ { name: NAME, val: VALUE } ],
+    //     string: [ { name: NAME, val: VALUE } ]
+    //   }
+    let consolidatedVariables = {};
+    Object.keys(variableTypeMap.possibleVariables).forEach((key) => {
+      variableTypeMap.possibleVariables[key].forEach((variable) => {
+        let varEntry = {};
+        varEntry["name"] = variable.name;
+        varEntry["val"] = variable.val;
+        consolidatedVariables[key].push(varEntry);
+      });
+    });
+    // Iterate over consolidatedVariables to populate parameter permutations data structure,
+    // which can be a list of N-tuples, where N is the number of parameters
+    // Return parameter permutations data structure
 }
 
 /*const inputArgs:string[] = process.argv;
