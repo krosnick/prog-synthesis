@@ -529,17 +529,12 @@ export function getPossibleMethodsAndVariables(inputFileContents: FileContents,
       
       // For both classDeclaration.properties.instanceProperties and classDeclaration.properties.staticProperties
         // Try accessing the property name in objectInstantiation.value to get the value
-
       const objectValue = objectInstantiation.value;
       console.log("objectValue");
       console.log(objectValue);
-      classDeclaration.properties.instanceProperties.forEach(function(property:DocEntry){
-        //console.log(property.name);
-        //console.log(objectValue[property.name]);
-        property.value = objectValue[property.name];
-        console.log(property);
-      });
-      
+      setObjectPropertyValues(classDeclaration.properties.instanceProperties, objectValue);
+      setObjectPropertyValues(classDeclaration.properties.staticProperties, objectValue);
+            
       // Instance properties only accessible when the class object is instantiated (as it is here)
       possibleVariables = possibleVariables.concat(classDeclaration.properties.instanceProperties);
       possibleMethodsAndVariables["mapClassToInstanceProperties"][classDeclaration.name] = classDeclaration.properties.instanceProperties;
@@ -568,6 +563,16 @@ export function getPossibleMethodsAndVariables(inputFileContents: FileContents,
                                                                    inputFileContents.functionDeclarations,
                                                                    outputFileContents.variableStatements);
   return possibleMethodsAndVariables;
+}
+
+function setObjectPropertyValues(propertyList:DocEntry[], objectValue){
+  propertyList.forEach(function(property:DocEntry){
+    const propertyValue = objectValue[property.name];
+    if(propertyValue){
+      property.value = propertyValue;
+    }
+    console.log(property);
+  });
 }
 
 export function mapVariablesToTypes(variablesArray) {

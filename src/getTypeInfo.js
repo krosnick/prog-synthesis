@@ -425,15 +425,11 @@ function getPossibleMethodsAndVariables(inputFileContents, outputFileContents) {
             // If it does have a value, use that for determining values of instance + static properties
             // For both classDeclaration.properties.instanceProperties and classDeclaration.properties.staticProperties
             // Try accessing the property name in objectInstantiation.value to get the value
-            var objectValue_1 = objectInstantiation.value;
+            var objectValue = objectInstantiation.value;
             console.log("objectValue");
-            console.log(objectValue_1);
-            classDeclaration.properties.instanceProperties.forEach(function (property) {
-                //console.log(property.name);
-                //console.log(objectValue[property.name]);
-                property.value = objectValue_1[property.name];
-                console.log(property);
-            });
+            console.log(objectValue);
+            setObjectPropertyValues(classDeclaration.properties.instanceProperties, objectValue);
+            setObjectPropertyValues(classDeclaration.properties.staticProperties, objectValue);
             // Instance properties only accessible when the class object is instantiated (as it is here)
             possibleVariables = possibleVariables.concat(classDeclaration.properties.instanceProperties);
             possibleMethodsAndVariables["mapClassToInstanceProperties"][classDeclaration.name] = classDeclaration.properties.instanceProperties;
@@ -455,6 +451,15 @@ function getPossibleMethodsAndVariables(inputFileContents, outputFileContents) {
     return possibleMethodsAndVariables;
 }
 exports.getPossibleMethodsAndVariables = getPossibleMethodsAndVariables;
+function setObjectPropertyValues(propertyList, objectValue) {
+    propertyList.forEach(function (property) {
+        var propertyValue = objectValue[property.name];
+        if (propertyValue) {
+            property.value = propertyValue;
+        }
+        console.log(property);
+    });
+}
 function mapVariablesToTypes(variablesArray) {
     //console.log(variablesArray);
     var variableTypeMap = {};
