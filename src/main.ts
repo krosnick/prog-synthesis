@@ -117,9 +117,9 @@ function findSolution(outputVar:DocEntry, possibleMethodsAndVariables, variableT
 
 }
 
-function recursiveCheckParamCombos(funcName:string, outputVarValue, paramOptions:({name:string, val:any})[][], paramsChosenSoFar:({name:string, val:any})[]):({name:string, val:any})[]{
+function recursiveCheckParamCombos(funcName:string, outputVarValue, paramOptions:({name:string, val:any})[][], paramsChosenSoFar:({name:string, val:any})[]):({name:string, val:any})[][]{
     
-    let validArgSets:({name:string, val:any})[] = [];
+    let validArgSets:({name:string, val:any})[][] = [];
     // If last param to be chosen
     if(paramsChosenSoFar.length === paramOptions.length-1){
         // For the last index in paramOptions, for each param option
@@ -193,6 +193,19 @@ function computeValue(funcName:string, params:({name:string, val:any})[]) : {arg
     //console.log(exampleInput["addTwoNumbers"].apply(this, argList));
 }
 
+function composeSolutionString(funcName:string, validArgs:({name:string, val:any})[]):string{
+    let paramCodeString = funcName + "(";
+    for(let paramIndex = 0; paramIndex < validArgs.length; paramIndex++){
+        paramCodeString += validArgs[paramIndex].name;
+        //paramCodeString += nonStrictEval(validArgs[paramIndex].name);
+        if(paramIndex < validArgs.length-1){
+            paramCodeString += ", ";
+        }
+    }
+    paramCodeString += ")";
+    return paramCodeString;
+}
+
 function findSolutionWithGivenFunction(outputVar:DocEntry, funcDocEntry:DocEntry, variableTypeMap){
     
     const outputVarValue = outputVar.value;
@@ -205,9 +218,14 @@ function findSolutionWithGivenFunction(outputVar:DocEntry, funcDocEntry:DocEntry
     //const validArgValCombos:({name:string, val:any})[][] = []; // add combos here that correctly eval to outputVar
         
     // probably need a recursive function to process parameterOptions and find valid combos
-    const validArgSets:({name:string, val:any})[] = recursiveCheckParamCombos(funcDocEntry.name, outputVar.value, parameterOptions, []);
-    console.log(funcDocEntry.name);
-    console.log(validArgSets);
+    const validArgSets:({name:string, val:any})[][] = recursiveCheckParamCombos(funcDocEntry.name, outputVar.value, parameterOptions, []);
+    /*console.log(funcDocEntry.name);
+    console.log(validArgSets);*/
+
+    for(let i = 0; i < validArgSets.length; i++){
+        const validArgs:({name:string, val:any})[] = validArgSets[i];
+        console.log("SOLUTION: " + composeSolutionString(funcDocEntry.name, validArgs));
+    }
 
     /*argValCombos.forEach(function(combo){
         //let codeString = candidateFuncName + "(";

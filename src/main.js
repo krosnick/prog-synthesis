@@ -169,6 +169,18 @@ function computeValue(funcName, params) {
     };
     //console.log(exampleInput["addTwoNumbers"].apply(this, argList));
 }
+function composeSolutionString(funcName, validArgs) {
+    var paramCodeString = funcName + "(";
+    for (var paramIndex = 0; paramIndex < validArgs.length; paramIndex++) {
+        paramCodeString += validArgs[paramIndex].name;
+        //paramCodeString += nonStrictEval(validArgs[paramIndex].name);
+        if (paramIndex < validArgs.length - 1) {
+            paramCodeString += ", ";
+        }
+    }
+    paramCodeString += ")";
+    return paramCodeString;
+}
 function findSolutionWithGivenFunction(outputVar, funcDocEntry, variableTypeMap) {
     var outputVarValue = outputVar.value;
     //console.log("outputVarValue");
@@ -179,8 +191,12 @@ function findSolutionWithGivenFunction(outputVar, funcDocEntry, variableTypeMap)
     //const validArgValCombos:({name:string, val:any})[][] = []; // add combos here that correctly eval to outputVar
     // probably need a recursive function to process parameterOptions and find valid combos
     var validArgSets = recursiveCheckParamCombos(funcDocEntry.name, outputVar.value, parameterOptions, []);
-    console.log(funcDocEntry.name);
-    console.log(validArgSets);
+    /*console.log(funcDocEntry.name);
+    console.log(validArgSets);*/
+    for (var i = 0; i < validArgSets.length; i++) {
+        var validArgs = validArgSets[i];
+        console.log("SOLUTION: " + composeSolutionString(funcDocEntry.name, validArgs));
+    }
     /*argValCombos.forEach(function(combo){
         //let codeString = candidateFuncName + "(";
         let paramCodeString = "(";

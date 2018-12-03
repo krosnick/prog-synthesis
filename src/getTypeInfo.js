@@ -426,8 +426,8 @@ function getPossibleMethodsAndVariables(inputFileContents, outputFileContents) {
             // For both classDeclaration.properties.instanceProperties and classDeclaration.properties.staticProperties
             // Try accessing the property name in objectInstantiation.value to get the value
             var objectValue = objectInstantiation.value;
-            console.log("objectValue");
-            console.log(objectValue);
+            //console.log("objectValue");
+            //console.log(objectValue);
             setObjectPropertyValues(classDeclaration.properties.instanceProperties, objectValue);
             setObjectPropertyValues(classDeclaration.properties.staticProperties, objectValue);
             // Instance properties only accessible when the class object is instantiated (as it is here)
@@ -457,7 +457,7 @@ function setObjectPropertyValues(propertyList, objectValue) {
         if (propertyValue) {
             property.value = propertyValue;
         }
-        console.log(property);
+        //console.log(property);
     });
 }
 function mapVariablesToTypes(variablesArray) {

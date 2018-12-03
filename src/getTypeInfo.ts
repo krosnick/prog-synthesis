@@ -530,8 +530,8 @@ export function getPossibleMethodsAndVariables(inputFileContents: FileContents,
       // For both classDeclaration.properties.instanceProperties and classDeclaration.properties.staticProperties
         // Try accessing the property name in objectInstantiation.value to get the value
       const objectValue = objectInstantiation.value;
-      console.log("objectValue");
-      console.log(objectValue);
+      //console.log("objectValue");
+      //console.log(objectValue);
       setObjectPropertyValues(classDeclaration.properties.instanceProperties, objectValue);
       setObjectPropertyValues(classDeclaration.properties.staticProperties, objectValue);
             
@@ -571,7 +571,7 @@ function setObjectPropertyValues(propertyList:DocEntry[], objectValue){
     if(propertyValue){
       property.value = propertyValue;
     }
-    console.log(property);
+    //console.log(property);
   });
 }
 
