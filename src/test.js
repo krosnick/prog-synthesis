@@ -11,6 +11,7 @@ var C = /** @class */ (function () {
      */
     function C(a) {
         this.pubValue = a.length * 100;
+        this.strValue = a;
     }
     //public static forAll:number = 200;
     //public forAll:number = 200;

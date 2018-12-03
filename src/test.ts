@@ -9,9 +9,11 @@ export class C {
      */
     constructor(a: string) {
         this.pubValue = a.length * 100;
+        this.strValue = a;
     }
 
     public pubValue:number;
+    public strValue:string;
     private privValue:string;
     //public static forAll:number = 200;
     //public forAll:number = 200;

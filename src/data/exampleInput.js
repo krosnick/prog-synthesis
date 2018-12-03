@@ -11,12 +11,17 @@ var myClass = new test_1.C("hello");
 function addTwoNumbers(a, b) { return a + b; }
 exports.addTwoNumbers = addTwoNumbers;
 ;
-function returnKeys(dict, str) { return dict.keys(); }
+function returnKeys(dict, str) { return Object.keys(dict); }
 exports.returnKeys = returnKeys;
 ;
 function returnValues(dict) {
     return Object.keys(dict).map(function (key) { return dict[key]; });
 }
 exports.returnValues = returnValues;
+;
+function concatStrings(str1, str2) {
+    return str1.concat(str2);
+}
+exports.concatStrings = concatStrings;
 ;
 // function returnBeys(dict:{ [num:number]:string }) { return dict.keys(); };
