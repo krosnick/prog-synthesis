@@ -94,35 +94,25 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
         varToSolutionsMap[outputVar.name] = findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap);
     });*/
     // for now, assume only 1 output var spec
-    varToSolutionsMap[outputFileContents.variableStatements[0].name] = findSolution(outputFileContents.variableStatements[0], possibleMethodsAndVariables, variableTypeMap);
+    varToSolutionsMap[outputFileContents.variableStatements[0].name] = findSolution(outputFileContents.variableStatements[0], possibleMethodsAndVariables, variableTypeMap, possibleMethodsAndVariables["mapInstanceNameToObject"]);
     console.log("varToSolutionsMap");
     console.log(varToSolutionsMap);
     return varToSolutionsMap;
 }
-function findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap) {
+function findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap, mapInstanceNameToObject) {
     var synthesizedCandidateSolutions = [];
     var possibleFunctions = possibleMethodsAndVariables["possibleFunctions"];
     for (var i = 0; i < possibleFunctions.length; i++) {
         var funcObject = possibleFunctions[i];
-        synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenMethodOrFunction(outputVar, funcObject, variableTypeMap, ""));
+        synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenMethodOrFunction(outputVar, funcObject, variableTypeMap, "", mapInstanceNameToObject));
     }
-    //const mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
-    //synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithMethods(outputVar, mapClassToInstanceMethods, variableTypeMap));
-    /*
-    const classNames = Object.keys(mapClassToStaticMethods);
-    for(let i = 0; i < classNames.length; i++){
-        const className = classNames[i];
-        const classStaticMethods:DocEntry[] = mapClassToStaticMethods[className];
-        for(let j = 0; j < classStaticMethods.length; j++){
-            const staticMethodObject = classStaticMethods[j];
-            synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenMethodOrFunction(outputVar, staticMethodObject, variableTypeMap, className));
-        }
-    }*/
+    var mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
+    synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithMethods(outputVar, mapClassToInstanceMethods, variableTypeMap, mapInstanceNameToObject));
     var mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
-    synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithMethods(outputVar, mapClassToStaticMethods, variableTypeMap));
+    synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithMethods(outputVar, mapClassToStaticMethods, variableTypeMap, mapInstanceNameToObject));
     return synthesizedCandidateSolutions;
 }
-function findSolutionWithMethods(outputVar, mapClassToMethods, variableTypeMap) {
+function findSolutionWithMethods(outputVar, mapClassToMethods, variableTypeMap, mapInstanceNameToObject) {
     var synthesizedCandidateSolutions = [];
     var classOrInstanceNames = Object.keys(mapClassToMethods);
     for (var i = 0; i < classOrInstanceNames.length; i++) {
@@ -130,12 +120,12 @@ function findSolutionWithMethods(outputVar, mapClassToMethods, variableTypeMap) 
         var classOrInstanceMethods = mapClassToMethods[classOrInstanceName];
         for (var j = 0; j < classOrInstanceMethods.length; j++) {
             var staticMethodObject = classOrInstanceMethods[j];
-            synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenMethodOrFunction(outputVar, staticMethodObject, variableTypeMap, classOrInstanceName));
+            synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenMethodOrFunction(outputVar, staticMethodObject, variableTypeMap, classOrInstanceName, mapInstanceNameToObject));
         }
     }
     return synthesizedCandidateSolutions;
 }
-function findSolutionWithGivenMethodOrFunction(outputVar, funcDocEntry, variableTypeMap, classOrInstanceName) {
+function findSolutionWithGivenMethodOrFunction(outputVar, funcDocEntry, variableTypeMap, classOrInstanceName, mapInstanceNameToObject) {
     var parameterOptions = getParameterOptions(funcDocEntry, variableTypeMap);
     var methodOrFunctionNameWithScope;
     if (classOrInstanceName.length > 0) { // if static or instance method of a class
@@ -144,7 +134,7 @@ function findSolutionWithGivenMethodOrFunction(outputVar, funcDocEntry, variable
     else {
         methodOrFunctionNameWithScope = funcDocEntry.name;
     }
-    var validArgSets = recursiveCheckParamCombos(funcDocEntry.name, classOrInstanceName, outputVar.value, parameterOptions, []);
+    var validArgSets = recursiveCheckParamCombos(funcDocEntry.name, classOrInstanceName, outputVar.value, parameterOptions, [], mapInstanceNameToObject);
     var synthesizedCandidateSolutions = [];
     for (var i = 0; i < validArgSets.length; i++) {
         var validArgs = validArgSets[i];
@@ -153,7 +143,7 @@ function findSolutionWithGivenMethodOrFunction(outputVar, funcDocEntry, variable
     }
     return synthesizedCandidateSolutions;
 }
-function recursiveCheckParamCombos(funcName, className, outputVarValue, paramOptions, paramsChosenSoFar) {
+function recursiveCheckParamCombos(funcName, className, outputVarValue, paramOptions, paramsChosenSoFar, mapInstanceNameToObject) {
     var validArgSets = [];
     // If last param to be chosen
     if (paramsChosenSoFar.length === paramOptions.length - 1) {
@@ -164,7 +154,7 @@ function recursiveCheckParamCombos(funcName, className, outputVarValue, paramOpt
             var paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
             paramsChosenSoFarClone.push(thisParamOption);
             // Compute function call on these params (given the prior params paramsChosenSoFar and thisParamOption)
-            var val = computeValue(funcName, className, paramsChosenSoFarClone);
+            var val = computeValue(funcName, className, paramsChosenSoFarClone, mapInstanceNameToObject);
             /*console.log("val.computedValue: " + val.computedValue);
             console.log("typeof val.computedValue: " + (typeof val.computedValue));
             console.log("outputVarValue: " + outputVarValue);
@@ -188,12 +178,12 @@ function recursiveCheckParamCombos(funcName, className, outputVarValue, paramOpt
             var thisParamOption = optionsForThisParam[i];
             var paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
             paramsChosenSoFarClone.push(thisParamOption);
-            validArgSets = validArgSets.concat(recursiveCheckParamCombos(funcName, className, outputVarValue, paramOptions, paramsChosenSoFarClone));
+            validArgSets = validArgSets.concat(recursiveCheckParamCombos(funcName, className, outputVarValue, paramOptions, paramsChosenSoFarClone, mapInstanceNameToObject));
         }
     }
     return validArgSets;
 }
-function computeValue(funcName, className, params) {
+function computeValue(funcName, className, params, mapInstanceNameToObject) {
     //console.log("computeValue called");
     /*console.log("funcName");
     console.log(funcName);
@@ -208,10 +198,10 @@ function computeValue(funcName, className, params) {
     }
     var funcObject;
     try {
-        funcObject = nonStrictEval_1.nonStrictEval(funcName);
+        funcObject = nonStrictEval_1.nonStrictEval(funcName); // native JS/TS function?
     }
     catch (error) {
-        funcObject = nonStrictEval_1.nonStrictEval(exampleInput[funcName]);
+        funcObject = nonStrictEval_1.nonStrictEval(exampleInput[funcName]); // function defined in input file
     }
     /*if(className.length > 0){
         console.log(exampleInput);
@@ -226,7 +216,17 @@ function computeValue(funcName, className, params) {
         funcObject = nonStrictEval(classes[className][funcName]);
     }*/
     if (className.length > 0) { // Assume all user-defined classes are defined in "classes" module
-        funcObject = nonStrictEval_1.nonStrictEval(exampleInput[className][funcName]);
+        var classObject = exampleInput[className];
+        if (classObject) { // if "className" is an actual class name
+            funcObject = nonStrictEval_1.nonStrictEval(exampleInput[className][funcName]);
+        }
+        else { // "className" is actually an class instance object; use mapInstanceNameToObject to get the instance object
+            var instanceObject = mapInstanceNameToObject[className];
+            //console.log("instanceObject");
+            //console.log(instanceObject);
+            funcObject = nonStrictEval_1.nonStrictEval(instanceObject[funcName]);
+        }
+        // something else?
     }
     //console.log("funcObject");
     //console.log(funcObject);

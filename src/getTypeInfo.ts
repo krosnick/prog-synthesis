@@ -518,6 +518,7 @@ export function getPossibleMethodsAndVariables(inputFileContents: FileContents,
   possibleMethodsAndVariables["mapClassToInstanceProperties"] = {};
   possibleMethodsAndVariables["mapClassToStaticMethods"] = {};
   possibleMethodsAndVariables["mapClassToStaticProperties"] = {};
+  possibleMethodsAndVariables["mapInstanceNameToObject"] = {}; // Used later for having easy access to class instance for instance method call
 
   var possibleVariables = inputFileContents.variableStatements;
   possibleMethodsAndVariables["possibleVariables"] = inputFileContents.variableStatements;
@@ -538,6 +539,7 @@ export function getPossibleMethodsAndVariables(inputFileContents: FileContents,
     */
 
     if(objectInstantiation && objectInstantiation.value){
+      
       // If it does have a value, use that for determining values of instance + static properties
       
       // For both classDeclaration.properties.instanceProperties and classDeclaration.properties.staticProperties
@@ -553,6 +555,8 @@ export function getPossibleMethodsAndVariables(inputFileContents: FileContents,
       possibleVariables = possibleVariables.concat(classDeclaration.properties.instanceProperties);
       //possibleMethodsAndVariables["mapClassToInstanceProperties"][classDeclaration.name] = classDeclaration.properties.instanceProperties;
       possibleMethodsAndVariables["mapClassToInstanceProperties"][objectName] = classDeclaration.properties.instanceProperties;
+    
+      possibleMethodsAndVariables["mapInstanceNameToObject"][objectName] = objectValue;
     } 
 
     // Do regardless (if there are static properties, they should always be accessible)

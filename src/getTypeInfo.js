@@ -418,6 +418,7 @@ function getPossibleMethodsAndVariables(inputFileContents, outputFileContents) {
     possibleMethodsAndVariables["mapClassToInstanceProperties"] = {};
     possibleMethodsAndVariables["mapClassToStaticMethods"] = {};
     possibleMethodsAndVariables["mapClassToStaticProperties"] = {};
+    possibleMethodsAndVariables["mapInstanceNameToObject"] = {}; // Used later for having easy access to class instance for instance method call
     var possibleVariables = inputFileContents.variableStatements;
     possibleMethodsAndVariables["possibleVariables"] = inputFileContents.variableStatements;
     inputFileContents.classDeclarations.forEach(function (classDeclaration) {
@@ -447,6 +448,7 @@ function getPossibleMethodsAndVariables(inputFileContents, outputFileContents) {
             possibleVariables = possibleVariables.concat(classDeclaration.properties.instanceProperties);
             //possibleMethodsAndVariables["mapClassToInstanceProperties"][classDeclaration.name] = classDeclaration.properties.instanceProperties;
             possibleMethodsAndVariables["mapClassToInstanceProperties"][objectName] = classDeclaration.properties.instanceProperties;
+            possibleMethodsAndVariables["mapInstanceNameToObject"][objectName] = objectValue;
         }
         // Do regardless (if there are static properties, they should always be accessible)
         possibleVariables = possibleVariables.concat(classDeclaration.properties.staticProperties);
