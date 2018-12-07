@@ -24,6 +24,6 @@ var C = /** @class */ (function () {
     return C;
 }());
 exports.C = C;
-//C["forAll"] = 200;
+C["forAll"] = 200;
 C.addNewDemonstration('hello');
 //C.testFunc('asdf');

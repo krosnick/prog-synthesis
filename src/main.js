@@ -11,10 +11,10 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     var inputFileContents = getTypeInfo_1.getDocEntrys([fileNameRequiredInput], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
+        //}, true);
     }, false);
-    //}, false);
-    console.log("inputFileContents");
-    console.log(inputFileContents);
+    //console.log("inputFileContents");
+    //console.log(inputFileContents);
     // Process required output; save as DocEntry[]
     var outputFileContents = getTypeInfo_1.getDocEntrys([fileNameRequiredOutput], {
         target: ts.ScriptTarget.ES5,
@@ -76,9 +76,9 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     console.log(variableTypeMap);
     console.log(variableTypeMap["mapClassToInstanceTypes"]["C"]);
     console.log(variableTypeMap["mapClassToStaticTypes"]["C"]);*/
-    console.log(variableTypeMap);
+    //console.log(variableTypeMap);
     //console.log(variableTypeMap["mapClassToStaticTypes"]["C"]);
-    console.log(variableTypeMap["mapClassToInstanceTypes"]["C"]);
+    //console.log(variableTypeMap["mapClassToInstanceTypes"]["C"]);
     ////////////////////////////////// END DEBUGGING //////////////////////////////////
     // Process native JS/TS (from lib.d.ts) and imported files (from fileNameRequiredInput)
     // Save functions as DocEntry[]
@@ -87,19 +87,25 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     // For the desired output type and the input types available,
     // search the DocEntry[]s for appropriate functions/classes/variables
     //findSolutionWithGivenFunction(undefined , undefined, undefined);
+    var varToSolutionsMap = {};
     // For each required output statement
     outputFileContents.variableStatements.forEach(function (outputVar) {
-        findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap);
+        varToSolutionsMap[outputVar.name] = findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap);
     });
+    console.log("varToSolutionsMap");
+    console.log(varToSolutionsMap);
+    return varToSolutionsMap;
 }
 function findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap) {
+    var synthesizedCandidateSolutions = [];
     var possibleFunctions = possibleMethodsAndVariables["possibleFunctions"];
     for (var i = 0; i < possibleFunctions.length; i++) {
         var funcObject = possibleFunctions[i];
-        findSolutionWithGivenFunction(outputVar, funcObject, variableTypeMap);
+        synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenFunction(outputVar, funcObject, variableTypeMap));
     }
     var mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
     var mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
+    return synthesizedCandidateSolutions;
 }
 function recursiveCheckParamCombos(funcName, outputVarValue, paramOptions, paramsChosenSoFar) {
     var validArgSets = [];
@@ -193,10 +199,14 @@ function findSolutionWithGivenFunction(outputVar, funcDocEntry, variableTypeMap)
     var validArgSets = recursiveCheckParamCombos(funcDocEntry.name, outputVar.value, parameterOptions, []);
     /*console.log(funcDocEntry.name);
     console.log(validArgSets);*/
+    var synthesizedCandidateSolutions = [];
     for (var i = 0; i < validArgSets.length; i++) {
         var validArgs = validArgSets[i];
-        console.log("SOLUTION: " + composeSolutionString(funcDocEntry.name, validArgs));
+        //console.log("SOLUTION: " + composeSolutionString(funcDocEntry.name, validArgs));
+        var solutionString = composeSolutionString(funcDocEntry.name, validArgs);
+        synthesizedCandidateSolutions.push(solutionString);
     }
+    return synthesizedCandidateSolutions;
     /*argValCombos.forEach(function(combo){
         //let codeString = candidateFuncName + "(";
         let paramCodeString = "(";

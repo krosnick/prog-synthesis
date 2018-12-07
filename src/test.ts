@@ -26,7 +26,7 @@ export class C {
         return true;
     }
 }
-//C["forAll"] = 200;
+C["forAll"] = 200;
 
 C.addNewDemonstration('hello');
 //C.testFunc('asdf');

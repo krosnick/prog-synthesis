@@ -5,15 +5,15 @@ import {nonStrictEval} from "./nonStrictEval";
 import * as _ from "lodash"; 
 //const nonStrictEval = require('./nonStrictEval');
 
-function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
+function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str:string]:string[]} {
     // Process required input; save as DocEntry[]
     const inputFileContents:FileContents = getDocEntrys([fileNameRequiredInput], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
+    //}, true);
     }, false);
-    //}, false);
-    console.log("inputFileContents");
-    console.log(inputFileContents);
+    //console.log("inputFileContents");
+    //console.log(inputFileContents);
 
     // Process required output; save as DocEntry[]
     const outputFileContents:FileContents = getDocEntrys([fileNameRequiredOutput], {
@@ -81,9 +81,9 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
     console.log(variableTypeMap);
     console.log(variableTypeMap["mapClassToInstanceTypes"]["C"]);
     console.log(variableTypeMap["mapClassToStaticTypes"]["C"]);*/
-    console.log(variableTypeMap);
+    //console.log(variableTypeMap);
     //console.log(variableTypeMap["mapClassToStaticTypes"]["C"]);
-    console.log(variableTypeMap["mapClassToInstanceTypes"]["C"]);
+    //console.log(variableTypeMap["mapClassToInstanceTypes"]["C"]);
     ////////////////////////////////// END DEBUGGING //////////////////////////////////
 
 
@@ -97,17 +97,25 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
 
     //findSolutionWithGivenFunction(undefined , undefined, undefined);
 
+    const varToSolutionsMap = {};
+
     // For each required output statement
     outputFileContents.variableStatements.forEach(function(outputVar:DocEntry){
-        findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap);
+        varToSolutionsMap[outputVar.name] = findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap);
     });
+    console.log("varToSolutionsMap");
+    console.log(varToSolutionsMap);
+
+    return varToSolutionsMap;
 }
 
-function findSolution(outputVar:DocEntry, possibleMethodsAndVariables, variableTypeMap){
+function findSolution(outputVar:DocEntry, possibleMethodsAndVariables, variableTypeMap):string[]{
+    let synthesizedCandidateSolutions:string[] = [];
+    
     const possibleFunctions = possibleMethodsAndVariables["possibleFunctions"];
     for(let i = 0; i < possibleFunctions.length; i++){
         const funcObject = possibleFunctions[i];
-        findSolutionWithGivenFunction(outputVar, funcObject, variableTypeMap);
+        synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenFunction(outputVar, funcObject, variableTypeMap));
     }
 
     const mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
@@ -115,6 +123,9 @@ function findSolution(outputVar:DocEntry, possibleMethodsAndVariables, variableT
 
     const mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
 
+
+    return synthesizedCandidateSolutions;
+    
 }
 
 function recursiveCheckParamCombos(funcName:string, outputVarValue, paramOptions:({name:string, val:any})[][], paramsChosenSoFar:({name:string, val:any})[]):({name:string, val:any})[][]{
@@ -206,7 +217,7 @@ function composeSolutionString(funcName:string, validArgs:({name:string, val:any
     return paramCodeString;
 }
 
-function findSolutionWithGivenFunction(outputVar:DocEntry, funcDocEntry:DocEntry, variableTypeMap){
+function findSolutionWithGivenFunction(outputVar:DocEntry, funcDocEntry:DocEntry, variableTypeMap):string[]{
     
     const outputVarValue = outputVar.value;
     //console.log("outputVarValue");
@@ -222,10 +233,16 @@ function findSolutionWithGivenFunction(outputVar:DocEntry, funcDocEntry:DocEntry
     /*console.log(funcDocEntry.name);
     console.log(validArgSets);*/
 
+    const synthesizedCandidateSolutions:string[] = [];
+
     for(let i = 0; i < validArgSets.length; i++){
         const validArgs:({name:string, val:any})[] = validArgSets[i];
-        console.log("SOLUTION: " + composeSolutionString(funcDocEntry.name, validArgs));
+        //console.log("SOLUTION: " + composeSolutionString(funcDocEntry.name, validArgs));
+        const solutionString = composeSolutionString(funcDocEntry.name, validArgs);
+        synthesizedCandidateSolutions.push(solutionString);
     }
+
+    return synthesizedCandidateSolutions;
 
     /*argValCombos.forEach(function(combo){
         //let codeString = candidateFuncName + "(";
