@@ -442,9 +442,11 @@ function getPossibleMethodsAndVariables(inputFileContents, outputFileContents) {
             //console.log(objectValue);
             setObjectPropertyValues(classDeclaration.properties.instanceProperties, objectValue);
             setObjectPropertyValues(classDeclaration.properties.staticProperties, objectValue);
+            var objectName = objectInstantiation.name;
             // Instance properties only accessible when the class object is instantiated (as it is here)
             possibleVariables = possibleVariables.concat(classDeclaration.properties.instanceProperties);
-            possibleMethodsAndVariables["mapClassToInstanceProperties"][classDeclaration.name] = classDeclaration.properties.instanceProperties;
+            //possibleMethodsAndVariables["mapClassToInstanceProperties"][classDeclaration.name] = classDeclaration.properties.instanceProperties;
+            possibleMethodsAndVariables["mapClassToInstanceProperties"][objectName] = classDeclaration.properties.instanceProperties;
         }
         // Do regardless (if there are static properties, they should always be accessible)
         possibleVariables = possibleVariables.concat(classDeclaration.properties.staticProperties);
@@ -452,11 +454,16 @@ function getPossibleMethodsAndVariables(inputFileContents, outputFileContents) {
     });
     inputFileContents.classDeclarations.forEach(function (classDeclaration) {
         //if (classObjectInstantiated(classDeclaration, inputFileContents)) {
-        if (classObjectInstantiated(classDeclaration, inputFileContents) !== undefined) {
+        var objectInstantiation = classObjectInstantiated(classDeclaration, inputFileContents);
+        if (objectInstantiation !== undefined) {
             // If you want to consider the instance methods even if the class has not been instantiated, then move this outside of the if statement
             /*console.log("classDeclaration.methods.instanceMethods");
             console.log(classDeclaration.methods.instanceMethods);*/
-            possibleMethodsAndVariables["mapClassToInstanceMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables, classDeclaration.methods.instanceMethods, outputFileContents.variableStatements);
+            var objectName = objectInstantiation.name;
+            /*possibleMethodsAndVariables["mapClassToInstanceMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables,
+                                                                                                            classDeclaration.methods.instanceMethods,
+                                                                                                            outputFileContents.variableStatements);*/
+            possibleMethodsAndVariables["mapClassToInstanceMethods"][objectName] = getPossibleFunctions(possibleVariables, classDeclaration.methods.instanceMethods, outputFileContents.variableStatements);
         }
         /*console.log("classDeclaration.methods.staticMethods");
         console.log(classDeclaration.methods.staticMethods);*/
