@@ -414,6 +414,8 @@ export function getDocEntrys(
 }
 
 function typesMatch(canType: string, otherType: string) {
+  /*console.log("canType: " + canType);
+  console.log("otherType: " + otherType);*/
   if (canType === otherType) {
     // We consider functions that return the exact type as example output
     return true;
@@ -460,9 +462,13 @@ function addCandidateFunction(candidateVariables: DocEntry[],
   if ("signatureInfo" in candidateFunction) {
     if (candidateFunction.signatureInfo.length > 0) {
       // Consider output values
+      //console.log("Consider output values for " + candidateFunction.name);
+      //console.log("Types match: " + typesMatch(candidateFunction.signatureInfo[0].returnType, outputDE[0].type));
+      //console.log("Params acceptable: " + paramsAcceptable(candidateFunction.signatureInfo[0], candidateVariables));
       if (typesMatch(candidateFunction.signatureInfo[0].returnType, outputDE[0].type) &&
           paramsAcceptable(candidateFunction.signatureInfo[0], candidateVariables)) {
         // Modifies the list in the caller's scope, since possibleFunctions passed in
+        //console.log("Types match + params acceptable" + candidateFunction.name);
         possibleFunctions.push(candidateFunction);
       }
     }
@@ -472,6 +478,13 @@ function addCandidateFunction(candidateVariables: DocEntry[],
 export function getPossibleFunctions(candidateVariables: DocEntry[],
                                      candidateFunctions: DocEntry[],
                                      outputDE: DocEntry[]) {
+
+  /*console.log("candidateVariables");
+  console.log(candidateVariables);
+  console.log("candidateFunctions");
+  console.log(candidateFunctions);
+  console.log("outputDE");
+  console.log(outputDE);*/
   var possibleFunctions = [];
   candidateFunctions.forEach((candidateFunction) => {
     addCandidateFunction(candidateVariables, candidateFunction, outputDE, possibleFunctions);
@@ -549,10 +562,14 @@ export function getPossibleMethodsAndVariables(inputFileContents: FileContents,
     //if (classObjectInstantiated(classDeclaration, inputFileContents)) {
     if(classObjectInstantiated(classDeclaration, inputFileContents) !== undefined) {
       // If you want to consider the instance methods even if the class has not been instantiated, then move this outside of the if statement
+      /*console.log("classDeclaration.methods.instanceMethods");
+      console.log(classDeclaration.methods.instanceMethods);*/
       possibleMethodsAndVariables["mapClassToInstanceMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables,
                                                                                                       classDeclaration.methods.instanceMethods,
                                                                                                       outputFileContents.variableStatements);
     }
+    /*console.log("classDeclaration.methods.staticMethods");
+    console.log(classDeclaration.methods.staticMethods);*/
     possibleMethodsAndVariables["mapClassToStaticMethods"][classDeclaration.name] = getPossibleFunctions(possibleVariables,
                                                                                                   classDeclaration.methods.staticMethods,
                                                                                                   outputFileContents.variableStatements);

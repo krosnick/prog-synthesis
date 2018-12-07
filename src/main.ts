@@ -1,6 +1,7 @@
 import {getDocEntrys,FileContents,getPossibleFunctions,getPossibleMethodsAndVariables,mapVariablesToTypes, DocEntry} from "./getTypeInfo";
 import * as ts from "typescript";
 import * as exampleInput from "./data/exampleInput";
+//import * as classes from "./test";
 import {nonStrictEval} from "./nonStrictEval";
 import * as _ from "lodash"; 
 //const nonStrictEval = require('./nonStrictEval');
@@ -71,8 +72,9 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
         variableTypeMap["mapClassToStaticTypes"][key] = mapVariablesToTypes(possibleMethodsAndVariables["mapClassToStaticProperties"][key]);
     });
 
-    /*console.log(possibleMethodsAndVariables);
-    console.log(possibleMethodsAndVariables["possibleFunctions"]);
+    //console.log("possibleMethodsAndVariables");
+    //console.log(possibleMethodsAndVariables);
+    /*console.log(possibleMethodsAndVariables["possibleFunctions"]);
     console.log(possibleMethodsAndVariables["mapClassToInstanceMethods"]);
     console.log(possibleMethodsAndVariables["mapClassToStaticMethods"]);
     console.log(possibleMethodsAndVariables["possibleVariables"]);
@@ -95,14 +97,16 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
     // For the desired output type and the input types available,
         // search the DocEntry[]s for appropriate functions/classes/variables
 
-    //findSolutionWithGivenFunction(undefined , undefined, undefined);
 
     const varToSolutionsMap = {};
 
     // For each required output statement
-    outputFileContents.variableStatements.forEach(function(outputVar:DocEntry){
+    /*outputFileContents.variableStatements.forEach(function(outputVar:DocEntry){
         varToSolutionsMap[outputVar.name] = findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap);
-    });
+    });*/
+
+    // for now, assume only 1 output var spec
+    varToSolutionsMap[outputFileContents.variableStatements[0].name] = findSolution(outputFileContents.variableStatements[0], possibleMethodsAndVariables, variableTypeMap);
     console.log("varToSolutionsMap");
     console.log(varToSolutionsMap);
 
@@ -119,16 +123,27 @@ function findSolution(outputVar:DocEntry, possibleMethodsAndVariables, variableT
     }
 
     const mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
-    
+    //console.log('possibleMethodsAndVariables["mapClassToInstanceMethods"]');
+    //console.log(possibleMethodsAndVariables["mapClassToInstanceMethods"]);
 
     const mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
-
+    //console.log('possibleMethodsAndVariables["mapClassToStaticMethods"]');
+    //console.log(possibleMethodsAndVariables["mapClassToStaticMethods"]);
+    const classNames = Object.keys(mapClassToStaticMethods);
+    for(let i = 0; i < classNames.length; i++){
+        const className = classNames[i];
+        const classStaticMethods:DocEntry[] = mapClassToStaticMethods[className];
+        for(let j = 0; j < classStaticMethods.length; j++){
+            const staticMethodObject = classStaticMethods[j];
+            synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenStaticMethod(outputVar, staticMethodObject, variableTypeMap, className));
+        }
+    }
 
     return synthesizedCandidateSolutions;
     
 }
 
-function recursiveCheckParamCombos(funcName:string, outputVarValue, paramOptions:({name:string, val:any})[][], paramsChosenSoFar:({name:string, val:any})[]):({name:string, val:any})[][]{
+function recursiveCheckParamCombos(funcName:string, className:string, outputVarValue, paramOptions:({name:string, val:any})[][], paramsChosenSoFar:({name:string, val:any})[]):({name:string, val:any})[][]{
     
     let validArgSets:({name:string, val:any})[][] = [];
     // If last param to be chosen
@@ -140,7 +155,7 @@ function recursiveCheckParamCombos(funcName:string, outputVarValue, paramOptions
             const paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
             paramsChosenSoFarClone.push(thisParamOption);
             // Compute function call on these params (given the prior params paramsChosenSoFar and thisParamOption)
-            const val:{argNamesList:string[], computedValue:any} = computeValue(funcName, paramsChosenSoFarClone);
+            const val:{argNamesList:string[], computedValue:any} = computeValue(funcName, className, paramsChosenSoFarClone);
             
             /*console.log("val.computedValue: " + val.computedValue);
             console.log("typeof val.computedValue: " + (typeof val.computedValue));
@@ -164,14 +179,19 @@ function recursiveCheckParamCombos(funcName:string, outputVarValue, paramOptions
             const thisParamOption = optionsForThisParam[i];
             const paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
             paramsChosenSoFarClone.push(thisParamOption);
-            validArgSets = validArgSets.concat(recursiveCheckParamCombos(funcName, outputVarValue, paramOptions, paramsChosenSoFarClone));
+            validArgSets = validArgSets.concat(recursiveCheckParamCombos(funcName, className, outputVarValue, paramOptions, paramsChosenSoFarClone));
         }
     }
     return validArgSets;
 }
 
-function computeValue(funcName:string, params:({name:string, val:any})[]) : {argNamesList:string[], computedValue:any}{
+function computeValue(funcName:string, className:string, params:({name:string, val:any})[]) : {argNamesList:string[], computedValue:any}{
     //console.log("computeValue called");
+
+    /*console.log("funcName");
+    console.log(funcName);
+    console.log("className");
+    console.log(className);*/
 
     const argNamesList = [];
     const argValuesList = [];
@@ -187,6 +207,22 @@ function computeValue(funcName:string, params:({name:string, val:any})[]) : {arg
     }catch(error){
         funcObject = nonStrictEval(exampleInput[funcName]);
     }
+    /*if(className.length > 0){
+        console.log(exampleInput);
+        funcObject = nonStrictEval(exampleInput[className][funcName]);
+        // instead of exampleInput[funcName], probably need
+            // exampleInput[className][staticOrInstanceFuncName]
+    }*/
+    /*if(className === "C"){
+        funcObject = nonStrictEval("C." + funcName);
+    }*/
+    /*if(className.length > 0){ // Assume all user-defined classes are defined in "classes" module
+        funcObject = nonStrictEval(classes[className][funcName]);
+    }*/
+    if(className.length > 0){ // Assume all user-defined classes are defined in "classes" module
+        funcObject = nonStrictEval(exampleInput[className][funcName]);
+    }
+    //console.log("funcObject");
     //console.log(funcObject);
 
     //console.log("argValuesList");
@@ -219,93 +255,43 @@ function composeSolutionString(funcName:string, validArgs:({name:string, val:any
 
 function findSolutionWithGivenFunction(outputVar:DocEntry, funcDocEntry:DocEntry, variableTypeMap):string[]{
     
-    const outputVarValue = outputVar.value;
-    //console.log("outputVarValue");
-    //console.log(outputVarValue);
-
-    //const candidateFuncName = "exampleInput." + "addTwoNumbers";
-    //const argValCombos:({name:string, val:any})[][] = [[{"name": "num", "val": 2}, {"name": "num", "val": 3}]];
     const parameterOptions:({name:string, val:any})[][] = getParameterOptions(funcDocEntry, variableTypeMap);
-    //const validArgValCombos:({name:string, val:any})[][] = []; // add combos here that correctly eval to outputVar
         
     // probably need a recursive function to process parameterOptions and find valid combos
-    const validArgSets:({name:string, val:any})[][] = recursiveCheckParamCombos(funcDocEntry.name, outputVar.value, parameterOptions, []);
-    /*console.log(funcDocEntry.name);
-    console.log(validArgSets);*/
+    const validArgSets:({name:string, val:any})[][] = recursiveCheckParamCombos(funcDocEntry.name, "", outputVar.value, parameterOptions, []);
+    
+    const synthesizedCandidateSolutions:string[] = [];
+
+    for(let i = 0; i < validArgSets.length; i++){
+        const validArgs:({name:string, val:any})[] = validArgSets[i];
+        const solutionString = composeSolutionString(funcDocEntry.name, validArgs);
+        synthesizedCandidateSolutions.push(solutionString);
+    }
+    return synthesizedCandidateSolutions;
+}
+
+function findSolutionWithGivenInstanceMethod(outputVar:DocEntry, funcDocEntry:DocEntry){
+    
+}
+
+function findSolutionWithGivenStaticMethod(outputVar:DocEntry, funcDocEntry:DocEntry, variableTypeMap, className:string):string[]{
+    const parameterOptions:({name:string, val:any})[][] = getParameterOptions(funcDocEntry, variableTypeMap);
+    
+    const staticMethodNameWithClass = className + "." + funcDocEntry.name;
+
+    // probably need a recursive function to process parameterOptions and find valid combos
+    const validArgSets:({name:string, val:any})[][] = recursiveCheckParamCombos(funcDocEntry.name, className, outputVar.value, parameterOptions, []);
+    //console.log("validArgSets");
+    //console.log(validArgSets);
 
     const synthesizedCandidateSolutions:string[] = [];
 
     for(let i = 0; i < validArgSets.length; i++){
         const validArgs:({name:string, val:any})[] = validArgSets[i];
-        //console.log("SOLUTION: " + composeSolutionString(funcDocEntry.name, validArgs));
-        const solutionString = composeSolutionString(funcDocEntry.name, validArgs);
+        const solutionString = composeSolutionString(staticMethodNameWithClass, validArgs);
         synthesizedCandidateSolutions.push(solutionString);
     }
-
     return synthesizedCandidateSolutions;
-
-    /*argValCombos.forEach(function(combo){
-        //let codeString = candidateFuncName + "(";
-        let paramCodeString = "(";
-        for(let paramIndex = 0; paramIndex < combo.length; paramIndex++){
-            paramCodeString += combo[paramIndex].val;
-            if(paramIndex < combo.length-1){
-                paramCodeString += ", ";
-            }
-        }
-        paramCodeString += ")";
-        //console.log(paramCodeString);
-        //console.log(nonStrictEval(exampleInput["addTwoNumbers"]));
-        const argList = [2, 3];
-        //console.log(exampleInput["addTwoNumbers"].apply(this, argList));
-        
-        // need to make sure we can get a function object for something like Math.abs
-        const mathAbs = nonStrictEval("Math.abs");
-        //console.log(mathAbs);
-        //console.log(mathAbs(-3));
-        
-    });*/
-}
-
-/*function findSolutionWithGivenFunction(outputVar:DocEntry, funcDocEntry:DocEntry, variableTypeMap){
-    //const candidateFuncName = funcDocEntry.name;
-    //const candidateFuncName = "substring";
-    //const candidateFuncName = "Math.pow";
-    
-    const candidateFuncName = "exampleInput." + "addTwoNumbers";
-    //const argValCombos:({name:string, val:any})[][] = []; // Replace with helper function call
-    //const argValCombos:({name:string, val:any})[][] = [[{"name": "str", "val": "testing"}, {"name": "length", "val": 4}]];
-    const argValCombos:({name:string, val:any})[][] = [[{"name": "num", "val": 2}, {"name": "num", "val": 3}]];
-    const validArgValCombos:({name:string, val:any})[][] = []; // add combos here that correctly eval to outputVar
-    argValCombos.forEach(function(combo){
-        //let codeString = candidateFuncName + "(";
-        let paramCodeString = "(";
-        for(let paramIndex = 0; paramIndex < combo.length; paramIndex++){
-            paramCodeString += combo[paramIndex].val;
-            if(paramIndex < combo.length-1){
-                paramCodeString += ", ";
-            }
-        }
-        paramCodeString += ")";
-        //console.log(paramCodeString);
-        //console.log(nonStrictEval(exampleInput["addTwoNumbers"]));
-        const argList = [2, 3];
-        //console.log(exampleInput["addTwoNumbers"].apply(this, argList));
-        
-        // need to make sure we can get a function object for something like Math.abs
-        const mathAbs = nonStrictEval("Math.abs");
-        //console.log(mathAbs);
-        //console.log(mathAbs(-3));
-        
-    });
-}*/
-
-function findSolutionWithGivenInstanceMethod(outputVar:DocEntry, funcDocEntry:DocEntry){
-
-}
-
-function findSolutionWithGivenStaticMethod(outputVar:DocEntry, funcDocEntry:DocEntry){
-
 }
 
 //function getParameterPermutations(funcDocEntry:DocEntry, variableTypeMap):({name:string, val:any})[][] {

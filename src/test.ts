@@ -18,15 +18,31 @@ export class C {
     //public static forAll:number = 200;
     //public forAll:number = 200;
 
-    public static addNewDemonstration(demonstration:string):boolean{
+    public static testStaticReturnBoolean(arg:string):boolean{
         return true;
     }
 
-    public testFunc(str:string):boolean{
+    public static testStaticReturnNumber(arg:string):number{
+        return 4;
+    }
+
+    public static testStaticReturnString(arg:string):string{
+        return "testString";
+    }
+
+    public testInstanceReturnBoolean(arg:string):boolean{
         return true;
+    }
+
+    public testInstanceReturnNumber(arg:string):number{
+        return 4;
+    }
+
+    public testInstanceReturnString(arg:string):string{
+        return "testString";
     }
 }
-C["forAll"] = 200;
+//C["forAll"] = 200;
 
-C.addNewDemonstration('hello');
+//C.testStaticReturnBoolean('hello');
 //C.testFunc('asdf');

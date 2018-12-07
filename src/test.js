@@ -15,15 +15,27 @@ var C = /** @class */ (function () {
     }
     //public static forAll:number = 200;
     //public forAll:number = 200;
-    C.addNewDemonstration = function (demonstration) {
+    C.testStaticReturnBoolean = function (arg) {
         return true;
     };
-    C.prototype.testFunc = function (str) {
+    C.testStaticReturnNumber = function (arg) {
+        return 4;
+    };
+    C.testStaticReturnString = function (arg) {
+        return "testString";
+    };
+    C.prototype.testInstanceReturnBoolean = function (arg) {
         return true;
+    };
+    C.prototype.testInstanceReturnNumber = function (arg) {
+        return 4;
+    };
+    C.prototype.testInstanceReturnString = function (arg) {
+        return "testString";
     };
     return C;
 }());
 exports.C = C;
-C["forAll"] = 200;
-C.addNewDemonstration('hello');
+//C["forAll"] = 200;
+//C.testStaticReturnBoolean('hello');
 //C.testFunc('asdf');
