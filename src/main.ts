@@ -119,28 +119,63 @@ function findSolution(outputVar:DocEntry, possibleMethodsAndVariables, variableT
     const possibleFunctions = possibleMethodsAndVariables["possibleFunctions"];
     for(let i = 0; i < possibleFunctions.length; i++){
         const funcObject = possibleFunctions[i];
-        synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenFunction(outputVar, funcObject, variableTypeMap));
+        synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenMethodOrFunction(outputVar, funcObject, variableTypeMap, ""));
     }
 
-    const mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
-    //console.log('possibleMethodsAndVariables["mapClassToInstanceMethods"]');
-    //console.log(possibleMethodsAndVariables["mapClassToInstanceMethods"]);
-
-    const mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
-    //console.log('possibleMethodsAndVariables["mapClassToStaticMethods"]');
-    //console.log(possibleMethodsAndVariables["mapClassToStaticMethods"]);
+    //const mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
+    //synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithMethods(outputVar, mapClassToInstanceMethods, variableTypeMap));
+    /*
     const classNames = Object.keys(mapClassToStaticMethods);
     for(let i = 0; i < classNames.length; i++){
         const className = classNames[i];
         const classStaticMethods:DocEntry[] = mapClassToStaticMethods[className];
         for(let j = 0; j < classStaticMethods.length; j++){
             const staticMethodObject = classStaticMethods[j];
-            synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenStaticMethod(outputVar, staticMethodObject, variableTypeMap, className));
+            synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenMethodOrFunction(outputVar, staticMethodObject, variableTypeMap, className));
+        }
+    }*/
+    const mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
+    synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithMethods(outputVar, mapClassToStaticMethods, variableTypeMap));
+
+    return synthesizedCandidateSolutions;
+    
+}
+
+function findSolutionWithMethods(outputVar:DocEntry, mapClassToMethods, variableTypeMap){
+    let synthesizedCandidateSolutions:string[] = [];
+
+    const classOrInstanceNames = Object.keys(mapClassToMethods);
+    for(let i = 0; i < classOrInstanceNames.length; i++){
+        const classOrInstanceName = classOrInstanceNames[i];
+        const classOrInstanceMethods:DocEntry[] = mapClassToMethods[classOrInstanceName];
+        for(let j = 0; j < classOrInstanceMethods.length; j++){
+            const staticMethodObject = classOrInstanceMethods[j];
+            synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenMethodOrFunction(outputVar, staticMethodObject, variableTypeMap, classOrInstanceName));
         }
     }
 
     return synthesizedCandidateSolutions;
-    
+}
+
+function findSolutionWithGivenMethodOrFunction(outputVar:DocEntry, funcDocEntry:DocEntry, variableTypeMap, classOrInstanceName:string):string[]{
+
+    const parameterOptions:({name:string, val:any})[][] = getParameterOptions(funcDocEntry, variableTypeMap);
+    let methodOrFunctionNameWithScope;
+    if(classOrInstanceName.length > 0){ // if static or instance method of a class
+        methodOrFunctionNameWithScope = classOrInstanceName + "." + funcDocEntry.name;
+    }else{
+        methodOrFunctionNameWithScope = funcDocEntry.name;
+    }
+
+    const validArgSets:({name:string, val:any})[][] = recursiveCheckParamCombos(funcDocEntry.name, classOrInstanceName, outputVar.value, parameterOptions, []);
+    const synthesizedCandidateSolutions:string[] = [];
+
+    for(let i = 0; i < validArgSets.length; i++){
+        const validArgs:({name:string, val:any})[] = validArgSets[i];
+        const solutionString = composeSolutionString(methodOrFunctionNameWithScope, validArgs);
+        synthesizedCandidateSolutions.push(solutionString);
+    }
+    return synthesizedCandidateSolutions;
 }
 
 function recursiveCheckParamCombos(funcName:string, className:string, outputVarValue, paramOptions:({name:string, val:any})[][], paramsChosenSoFar:({name:string, val:any})[]):({name:string, val:any})[][]{
@@ -251,47 +286,6 @@ function composeSolutionString(funcName:string, validArgs:({name:string, val:any
     }
     paramCodeString += ")";
     return paramCodeString;
-}
-
-function findSolutionWithGivenFunction(outputVar:DocEntry, funcDocEntry:DocEntry, variableTypeMap):string[]{
-    
-    const parameterOptions:({name:string, val:any})[][] = getParameterOptions(funcDocEntry, variableTypeMap);
-        
-    // probably need a recursive function to process parameterOptions and find valid combos
-    const validArgSets:({name:string, val:any})[][] = recursiveCheckParamCombos(funcDocEntry.name, "", outputVar.value, parameterOptions, []);
-    
-    const synthesizedCandidateSolutions:string[] = [];
-
-    for(let i = 0; i < validArgSets.length; i++){
-        const validArgs:({name:string, val:any})[] = validArgSets[i];
-        const solutionString = composeSolutionString(funcDocEntry.name, validArgs);
-        synthesizedCandidateSolutions.push(solutionString);
-    }
-    return synthesizedCandidateSolutions;
-}
-
-function findSolutionWithGivenInstanceMethod(outputVar:DocEntry, funcDocEntry:DocEntry){
-    
-}
-
-function findSolutionWithGivenStaticMethod(outputVar:DocEntry, funcDocEntry:DocEntry, variableTypeMap, className:string):string[]{
-    const parameterOptions:({name:string, val:any})[][] = getParameterOptions(funcDocEntry, variableTypeMap);
-    
-    const staticMethodNameWithClass = className + "." + funcDocEntry.name;
-
-    // probably need a recursive function to process parameterOptions and find valid combos
-    const validArgSets:({name:string, val:any})[][] = recursiveCheckParamCombos(funcDocEntry.name, className, outputVar.value, parameterOptions, []);
-    //console.log("validArgSets");
-    //console.log(validArgSets);
-
-    const synthesizedCandidateSolutions:string[] = [];
-
-    for(let i = 0; i < validArgSets.length; i++){
-        const validArgs:({name:string, val:any})[] = validArgSets[i];
-        const solutionString = composeSolutionString(staticMethodNameWithClass, validArgs);
-        synthesizedCandidateSolutions.push(solutionString);
-    }
-    return synthesizedCandidateSolutions;
 }
 
 //function getParameterPermutations(funcDocEntry:DocEntry, variableTypeMap):({name:string, val:any})[][] {

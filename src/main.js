@@ -104,22 +104,52 @@ function findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap) {
     var possibleFunctions = possibleMethodsAndVariables["possibleFunctions"];
     for (var i = 0; i < possibleFunctions.length; i++) {
         var funcObject = possibleFunctions[i];
-        synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenFunction(outputVar, funcObject, variableTypeMap));
+        synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenMethodOrFunction(outputVar, funcObject, variableTypeMap, ""));
     }
-    var mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
-    //console.log('possibleMethodsAndVariables["mapClassToInstanceMethods"]');
-    //console.log(possibleMethodsAndVariables["mapClassToInstanceMethods"]);
-    var mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
-    //console.log('possibleMethodsAndVariables["mapClassToStaticMethods"]');
-    //console.log(possibleMethodsAndVariables["mapClassToStaticMethods"]);
-    var classNames = Object.keys(mapClassToStaticMethods);
-    for (var i = 0; i < classNames.length; i++) {
-        var className = classNames[i];
-        var classStaticMethods = mapClassToStaticMethods[className];
-        for (var j = 0; j < classStaticMethods.length; j++) {
-            var staticMethodObject = classStaticMethods[j];
-            synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenStaticMethod(outputVar, staticMethodObject, variableTypeMap, className));
+    //const mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
+    //synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithMethods(outputVar, mapClassToInstanceMethods, variableTypeMap));
+    /*
+    const classNames = Object.keys(mapClassToStaticMethods);
+    for(let i = 0; i < classNames.length; i++){
+        const className = classNames[i];
+        const classStaticMethods:DocEntry[] = mapClassToStaticMethods[className];
+        for(let j = 0; j < classStaticMethods.length; j++){
+            const staticMethodObject = classStaticMethods[j];
+            synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenMethodOrFunction(outputVar, staticMethodObject, variableTypeMap, className));
         }
+    }*/
+    var mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
+    synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithMethods(outputVar, mapClassToStaticMethods, variableTypeMap));
+    return synthesizedCandidateSolutions;
+}
+function findSolutionWithMethods(outputVar, mapClassToMethods, variableTypeMap) {
+    var synthesizedCandidateSolutions = [];
+    var classOrInstanceNames = Object.keys(mapClassToMethods);
+    for (var i = 0; i < classOrInstanceNames.length; i++) {
+        var classOrInstanceName = classOrInstanceNames[i];
+        var classOrInstanceMethods = mapClassToMethods[classOrInstanceName];
+        for (var j = 0; j < classOrInstanceMethods.length; j++) {
+            var staticMethodObject = classOrInstanceMethods[j];
+            synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenMethodOrFunction(outputVar, staticMethodObject, variableTypeMap, classOrInstanceName));
+        }
+    }
+    return synthesizedCandidateSolutions;
+}
+function findSolutionWithGivenMethodOrFunction(outputVar, funcDocEntry, variableTypeMap, classOrInstanceName) {
+    var parameterOptions = getParameterOptions(funcDocEntry, variableTypeMap);
+    var methodOrFunctionNameWithScope;
+    if (classOrInstanceName.length > 0) { // if static or instance method of a class
+        methodOrFunctionNameWithScope = classOrInstanceName + "." + funcDocEntry.name;
+    }
+    else {
+        methodOrFunctionNameWithScope = funcDocEntry.name;
+    }
+    var validArgSets = recursiveCheckParamCombos(funcDocEntry.name, classOrInstanceName, outputVar.value, parameterOptions, []);
+    var synthesizedCandidateSolutions = [];
+    for (var i = 0; i < validArgSets.length; i++) {
+        var validArgs = validArgSets[i];
+        var solutionString = composeSolutionString(methodOrFunctionNameWithScope, validArgs);
+        synthesizedCandidateSolutions.push(solutionString);
     }
     return synthesizedCandidateSolutions;
 }
@@ -222,35 +252,6 @@ function composeSolutionString(funcName, validArgs) {
     }
     paramCodeString += ")";
     return paramCodeString;
-}
-function findSolutionWithGivenFunction(outputVar, funcDocEntry, variableTypeMap) {
-    var parameterOptions = getParameterOptions(funcDocEntry, variableTypeMap);
-    // probably need a recursive function to process parameterOptions and find valid combos
-    var validArgSets = recursiveCheckParamCombos(funcDocEntry.name, "", outputVar.value, parameterOptions, []);
-    var synthesizedCandidateSolutions = [];
-    for (var i = 0; i < validArgSets.length; i++) {
-        var validArgs = validArgSets[i];
-        var solutionString = composeSolutionString(funcDocEntry.name, validArgs);
-        synthesizedCandidateSolutions.push(solutionString);
-    }
-    return synthesizedCandidateSolutions;
-}
-function findSolutionWithGivenInstanceMethod(outputVar, funcDocEntry) {
-}
-function findSolutionWithGivenStaticMethod(outputVar, funcDocEntry, variableTypeMap, className) {
-    var parameterOptions = getParameterOptions(funcDocEntry, variableTypeMap);
-    var staticMethodNameWithClass = className + "." + funcDocEntry.name;
-    // probably need a recursive function to process parameterOptions and find valid combos
-    var validArgSets = recursiveCheckParamCombos(funcDocEntry.name, className, outputVar.value, parameterOptions, []);
-    //console.log("validArgSets");
-    //console.log(validArgSets);
-    var synthesizedCandidateSolutions = [];
-    for (var i = 0; i < validArgSets.length; i++) {
-        var validArgs = validArgSets[i];
-        var solutionString = composeSolutionString(staticMethodNameWithClass, validArgs);
-        synthesizedCandidateSolutions.push(solutionString);
-    }
-    return synthesizedCandidateSolutions;
 }
 //function getParameterPermutations(funcDocEntry:DocEntry, variableTypeMap):({name:string, val:any})[][] {
 function getParameterOptions(funcDocEntry, variableTypeMap) {
