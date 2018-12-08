@@ -1,10 +1,7 @@
 // Adapted from https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
 
 import * as ts from "typescript";
-//import {C} from "./test";
-import * as userDefinedClasses from "./test";
 import { nonStrictEval } from "./nonStrictEval";
-//import * as fs from "fs";
 
 export interface DocEntry {
   name?: string;
@@ -33,14 +30,18 @@ export interface FileContents{
   variableStatements: DocEntry[]
 };
 
+
+let inputFileContentsString:string;
+
 /** Generate documentation for all classes in a set of .ts files */
 export function getDocEntrys(
   fileNames: string[],
   options: ts.CompilerOptions,
-  checkDeclarationFiles: boolean
+  checkDeclarationFiles: boolean,
+  inputFileContents:string
   ): FileContents {
 
-
+  inputFileContentsString = inputFileContents;
   // Build a program using the set of root file names in fileNames
   let program = ts.createProgram(fileNames, options);
   
@@ -197,14 +198,51 @@ export function getDocEntrys(
     const indexOfSemicolon:number = codeLine.indexOf(";");
     const valueString:string = codeLine.substring(indexOfEqualSign, indexOfSemicolon).trim();
     
-    if(valueString === 'new C("hello")'){
-      const classType = nonStrictEval(userDefinedClasses["C"]);
+    /*let funcObject;
+    try {
+        funcObject = nonStrictEval(funcName); // native JS/TS function?
+    }catch(error){
+        funcObject = nonStrictEval(exampleInput[funcName]); // function defined in input file
+    }*/
+    
+    /*if(valueString === 'new C("hello")'){
+      //console.log(ts.SyntaxKind[symbol.declarations[0].kind]);
+      console.log(node);
+      const classType = nonStrictEval(exampleInput["C"]);
       const classInstance = new classType("hello");
       symbolDetails.value = classInstance;
     }else{
       const varValue = eval("(" + valueString + ")");
       symbolDetails.value = varValue;
+    }*/
+    //console.log(eval("(const numA:number = 10;)"));
+
+    //const varValue = eval("(" + inputFileContentsString + "\n" + valueString + ")");
+    let varValue;
+    /*try{
+      varValue = eval("(" + inputFileContentsString + "\n" + valueString + ")");
+    }catch{
+      varValue = eval(inputFileContentsString + "\n" + valueString);
+    }*/
+
+    try{
+      varValue = nonStrictEval("(" + valueString + ")");
+    }catch{
+      try{
+        varValue = nonStrictEval("(" + inputFileContentsString + valueString + ")");
+      }catch{
+        varValue = nonStrictEval(inputFileContentsString + valueString);
+      }
     }
+    
+    /*console.log("full thing to eval");
+    console.log(inputFileContentsString + valueString);
+    console.log("varValue");
+    console.log(varValue);*/
+    symbolDetails.value = varValue;
+    /*const varValue = eval("(" + valueString + ")");
+    symbolDetails.value = varValue;*/
+
     //console.log(symbolDetails.value);
     //console.log(typeof symbolDetails.value);
 

@@ -2,12 +2,12 @@
 // Adapted from https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
 exports.__esModule = true;
 var ts = require("typescript");
-//import {C} from "./test";
-var userDefinedClasses = require("./test");
 var nonStrictEval_1 = require("./nonStrictEval");
 ;
+var inputFileContentsString;
 /** Generate documentation for all classes in a set of .ts files */
-function getDocEntrys(fileNames, options, checkDeclarationFiles) {
+function getDocEntrys(fileNames, options, checkDeclarationFiles, inputFileContents) {
+    inputFileContentsString = inputFileContents;
     // Build a program using the set of root file names in fileNames
     var program = ts.createProgram(fileNames, options);
     // Get the checker, we will use it to find more about classes
@@ -150,15 +150,48 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles) {
         var indexOfEqualSign = codeLine.indexOf("=") + 1;
         var indexOfSemicolon = codeLine.indexOf(";");
         var valueString = codeLine.substring(indexOfEqualSign, indexOfSemicolon).trim();
-        if (valueString === 'new C("hello")') {
-            var classType = nonStrictEval_1.nonStrictEval(userDefinedClasses["C"]);
-            var classInstance = new classType("hello");
-            symbolDetails.value = classInstance;
+        /*let funcObject;
+        try {
+            funcObject = nonStrictEval(funcName); // native JS/TS function?
+        }catch(error){
+            funcObject = nonStrictEval(exampleInput[funcName]); // function defined in input file
+        }*/
+        /*if(valueString === 'new C("hello")'){
+          //console.log(ts.SyntaxKind[symbol.declarations[0].kind]);
+          console.log(node);
+          const classType = nonStrictEval(exampleInput["C"]);
+          const classInstance = new classType("hello");
+          symbolDetails.value = classInstance;
+        }else{
+          const varValue = eval("(" + valueString + ")");
+          symbolDetails.value = varValue;
+        }*/
+        //console.log(eval("(const numA:number = 10;)"));
+        //const varValue = eval("(" + inputFileContentsString + "\n" + valueString + ")");
+        var varValue;
+        /*try{
+          varValue = eval("(" + inputFileContentsString + "\n" + valueString + ")");
+        }catch{
+          varValue = eval(inputFileContentsString + "\n" + valueString);
+        }*/
+        try {
+            varValue = nonStrictEval_1.nonStrictEval("(" + valueString + ")");
         }
-        else {
-            var varValue = eval("(" + valueString + ")");
-            symbolDetails.value = varValue;
+        catch (_a) {
+            try {
+                varValue = nonStrictEval_1.nonStrictEval("(" + inputFileContentsString + valueString + ")");
+            }
+            catch (_b) {
+                varValue = nonStrictEval_1.nonStrictEval(inputFileContentsString + valueString);
+            }
         }
+        /*console.log("full thing to eval");
+        console.log(inputFileContentsString + valueString);
+        console.log("varValue");
+        console.log(varValue);*/
+        symbolDetails.value = varValue;
+        /*const varValue = eval("(" + valueString + ")");
+        symbolDetails.value = varValue;*/
         //console.log(symbolDetails.value);
         //console.log(typeof symbolDetails.value);
         /*const classType = nonStrictEval(userDefinedClasses["C"]);

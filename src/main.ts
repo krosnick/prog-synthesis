@@ -1,18 +1,33 @@
 import {getDocEntrys,FileContents,getPossibleFunctions,getPossibleMethodsAndVariables,mapVariablesToTypes, DocEntry} from "./getTypeInfo";
 import * as ts from "typescript";
-import * as exampleInput from "./data/exampleInput";
-//import * as classes from "./test";
 import {nonStrictEval} from "./nonStrictEval";
-import * as _ from "lodash"; 
+import * as _ from "lodash";
+import * as fs from "fs";
 //const nonStrictEval = require('./nonStrictEval');
 
+let transpiledInputFileContentsString;
 function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str:string]:string[]} {
+    
+    // Get string of the code in the input file
+    let inputFileContentsString = fs.readFileSync(fileNameRequiredInput, "utf8");
+    transpiledInputFileContentsString = ts.transpileModule(inputFileContentsString,
+        {
+            compilerOptions: {
+                target: ts.ScriptTarget.ES5,
+                module: ts.ModuleKind.CommonJS,
+                noImplicitUseStrict: true
+            },
+        }
+    ).outputText;
+    //console.log("fileContent");
+    //console.log(fileContent);
+
     // Process required input; save as DocEntry[]
     const inputFileContents:FileContents = getDocEntrys([fileNameRequiredInput], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
     //}, true);
-    }, false);
+    }, false, transpiledInputFileContentsString);
     //console.log("inputFileContents");
     //console.log(inputFileContents);
 
@@ -20,7 +35,7 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
     const outputFileContents:FileContents = getDocEntrys([fileNameRequiredOutput], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
-    }, false);
+    }, false, inputFileContentsString);
     // console.log("outputFileContents");
     // console.log(outputFileContents);
 
@@ -228,10 +243,30 @@ function computeValue(funcName:string, className:string, params:({name:string, v
     }
 
     let funcObject;
-    try {
+    /*try {
         funcObject = nonStrictEval(funcName); // native JS/TS function?
     }catch(error){
         funcObject = nonStrictEval(exampleInput[funcName]); // function defined in input file
+    }*/
+
+    console.log(transpiledInputFileContentsString);
+    /*try{
+        funcObject = nonStrictEval(funcName);
+    }catch{
+        funcObject = nonStrictEval("(" + transpiledInputFileContentsString + funcName + ")");
+    }*/
+
+    try{
+        funcObject = nonStrictEval("(" + funcName + ")");
+    }catch{
+        try{
+            funcObject = nonStrictEval("(" + transpiledInputFileContentsString + funcName + ")");
+        }catch{
+            try{
+                funcObject = nonStrictEval(transpiledInputFileContentsString + funcName);
+            }catch{
+            }
+        }
     }
     /*if(className.length > 0){
         console.log(exampleInput);
@@ -247,9 +282,16 @@ function computeValue(funcName:string, className:string, params:({name:string, v
     }*/
 
     if(className.length > 0){ // Assume all user-defined classes are defined in "classes" module
-        const classObject = exampleInput[className];
+        let classObject;
+        try{
+            classObject = nonStrictEval("(" + transpiledInputFileContentsString + className + ")");
+        }catch{
+            classObject = nonStrictEval(transpiledInputFileContentsString + className);
+        }
+        //const classObject = exampleInput[className];
         if(classObject){ // if "className" is an actual class name
-            funcObject = nonStrictEval(exampleInput[className][funcName]);
+            //funcObject = nonStrictEval(exampleInput[className][funcName]);
+            funcObject = nonStrictEval(classObject[funcName]);
         }else{ // "className" is actually an class instance object; use mapInstanceNameToObject to get the instance object
             const instanceObject = mapInstanceNameToObject[className];
             //console.log("instanceObject");

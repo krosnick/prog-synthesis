@@ -2,25 +2,36 @@
 exports.__esModule = true;
 var getTypeInfo_1 = require("./getTypeInfo");
 var ts = require("typescript");
-var exampleInput = require("./data/exampleInput");
-//import * as classes from "./test";
 var nonStrictEval_1 = require("./nonStrictEval");
 var _ = require("lodash");
+var fs = require("fs");
 //const nonStrictEval = require('./nonStrictEval');
+var transpiledInputFileContentsString;
 function main(fileNameRequiredInput, fileNameRequiredOutput) {
+    // Get string of the code in the input file
+    var inputFileContentsString = fs.readFileSync(fileNameRequiredInput, "utf8");
+    transpiledInputFileContentsString = ts.transpileModule(inputFileContentsString, {
+        compilerOptions: {
+            target: ts.ScriptTarget.ES5,
+            module: ts.ModuleKind.CommonJS,
+            noImplicitUseStrict: true
+        }
+    }).outputText;
+    //console.log("fileContent");
+    //console.log(fileContent);
     // Process required input; save as DocEntry[]
     var inputFileContents = getTypeInfo_1.getDocEntrys([fileNameRequiredInput], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
         //}, true);
-    }, false);
+    }, false, transpiledInputFileContentsString);
     //console.log("inputFileContents");
     //console.log(inputFileContents);
     // Process required output; save as DocEntry[]
     var outputFileContents = getTypeInfo_1.getDocEntrys([fileNameRequiredOutput], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
-    }, false);
+    }, false, inputFileContentsString);
     // console.log("outputFileContents");
     // console.log(outputFileContents);
     // Process native JS/TS (from lib.d.ts)
@@ -197,11 +208,31 @@ function computeValue(funcName, className, params, mapInstanceNameToObject) {
         argValuesList.push(param.val);
     }
     var funcObject;
+    /*try {
+        funcObject = nonStrictEval(funcName); // native JS/TS function?
+    }catch(error){
+        funcObject = nonStrictEval(exampleInput[funcName]); // function defined in input file
+    }*/
+    console.log(transpiledInputFileContentsString);
+    /*try{
+        funcObject = nonStrictEval(funcName);
+    }catch{
+        funcObject = nonStrictEval("(" + transpiledInputFileContentsString + funcName + ")");
+    }*/
     try {
-        funcObject = nonStrictEval_1.nonStrictEval(funcName); // native JS/TS function?
+        funcObject = nonStrictEval_1.nonStrictEval("(" + funcName + ")");
     }
-    catch (error) {
-        funcObject = nonStrictEval_1.nonStrictEval(exampleInput[funcName]); // function defined in input file
+    catch (_a) {
+        try {
+            funcObject = nonStrictEval_1.nonStrictEval("(" + transpiledInputFileContentsString + funcName + ")");
+        }
+        catch (_b) {
+            try {
+                funcObject = nonStrictEval_1.nonStrictEval(transpiledInputFileContentsString + funcName);
+            }
+            catch (_c) {
+            }
+        }
     }
     /*if(className.length > 0){
         console.log(exampleInput);
@@ -216,9 +247,17 @@ function computeValue(funcName, className, params, mapInstanceNameToObject) {
         funcObject = nonStrictEval(classes[className][funcName]);
     }*/
     if (className.length > 0) { // Assume all user-defined classes are defined in "classes" module
-        var classObject = exampleInput[className];
+        var classObject = void 0;
+        try {
+            classObject = nonStrictEval_1.nonStrictEval("(" + transpiledInputFileContentsString + className + ")");
+        }
+        catch (_d) {
+            classObject = nonStrictEval_1.nonStrictEval(transpiledInputFileContentsString + className);
+        }
+        //const classObject = exampleInput[className];
         if (classObject) { // if "className" is an actual class name
-            funcObject = nonStrictEval_1.nonStrictEval(exampleInput[className][funcName]);
+            //funcObject = nonStrictEval(exampleInput[className][funcName]);
+            funcObject = nonStrictEval_1.nonStrictEval(classObject[funcName]);
         }
         else { // "className" is actually an class instance object; use mapInstanceNameToObject to get the instance object
             var instanceObject = mapInstanceNameToObject[className];
