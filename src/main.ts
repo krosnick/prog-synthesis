@@ -249,7 +249,6 @@ function computeValue(funcName:string, className:string, params:({name:string, v
         funcObject = nonStrictEval(exampleInput[funcName]); // function defined in input file
     }*/
 
-    console.log(transpiledInputFileContentsString);
     /*try{
         funcObject = nonStrictEval(funcName);
     }catch{
