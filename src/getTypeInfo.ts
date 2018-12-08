@@ -145,8 +145,7 @@ export function getDocEntrys(
 
   function serializeVariable(symbol: ts.Symbol, node: ts.Node){
     let symbolDetails = serializeSymbol(symbol);
-    
-    /*if(symbol.valueDeclaration["initializer"]["text"]){ // probably a primitive, has "text" property 
+    /*if(symbol.valueDeclaration["initializer"]["text"]){ // probably a primitive, has "text" property
       symbolDetails.value = symbol.valueDeclaration["initializer"]["text"]; // works for primitives
       //console.log(symbolDetails.value);
     }else if(symbol.valueDeclaration["initializer"]["symbol"]){
@@ -174,7 +173,7 @@ export function getDocEntrys(
       .getCallSignatures()
       .map(serializeSignature);
 
-      
+
     const codeLine:string = node.getText();
     const indexOfEqualSign:number = codeLine.indexOf("=") + 1;
     const indexOfSemicolon:number = codeLine.indexOf(";");
@@ -339,6 +338,10 @@ export function getDocEntrys(
 
               if(thisSymbol.declarations[0].kind === ts.SyntaxKind.PropertyDeclaration){
                 propertiesList.push(symbolDetails);
+                // console.log("PROPERTY");
+                // console.log();
+                // console.log(thisSymbol.declarations[0]["initializer"].text)
+                // console.log(symbolDetails);
               }else if(thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodDeclaration){
                 methodsList.push(symbolDetails);
               }
@@ -505,12 +508,23 @@ export function mapVariablesToTypes(variablesArray) {
 }
 
 export function getParameterPermutations(variableTypeMap) {
+  // make local consolidatedVariables map that allows us to iterate over all variables,
+  // instanceProperties, and staticProperties in one loop
+  // consolidatedVariables Example:
+  //   {
+  //     number: [ { name: NAME, val: VALUE } ],
+  //     string: [ { name: NAME, val: VALUE } ]
+  //   }
   let consolidatedVariables = {};
   Object.keys(variableTypeMap.possibleVariables).forEach((key) => {
     variableTypeMap.possibleVariables[key].forEach((variable) => {
       let varEntry = {};
       varEntry["name"] = variable.name;
-      consolidatedVariables[key].push();
+      varEntry["val"] = variable.val;
+      consolidatedVariables[key].push(varEntry);
     });
   });
+  // Iterate over consolidatedVariables to populate parameter permutations data structure,
+  // which can be a list of N-tuples, where N is the number of parameters
+  // Return parameter permutations data structure
 }

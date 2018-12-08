@@ -73,6 +73,7 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string){
     console.log(possibleMethodsAndVariables["mapClassToInstanceProperties"]);
     console.log(possibleMethodsAndVariables["mapClassToStaticProperties"]);
     console.log(variableTypeMap);
+    console.log(variableTypeMap["possibleVariables"]);
     console.log(variableTypeMap["mapClassToInstanceTypes"]["C"]);
     console.log(variableTypeMap["mapClassToStaticTypes"]["C"]);
     ////////////////////////////////// END DEBUGGING //////////////////////////////////
@@ -96,7 +97,7 @@ function findSolution(outputVar:DocEntry, possibleMethodsAndVariables, variableT
     }
 
     const mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
-    
+
 
     const mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
 
@@ -107,7 +108,7 @@ function findSolutionWithGivenFunction(outputVar:DocEntry, funcDocEntry:DocEntry
     const argValCombos:({name:string, val:any})[] = []; // Replace with helper function call
     const validArgValCombos:(DocEntry[])[] = []; // add combos here that correctly eval to outputVar
     argValCombos.forEach(function(combo){
-        
+
     });
 }
 

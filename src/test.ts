@@ -9,7 +9,7 @@ export class C {
      */
     constructor(a: string) { }
 
-    public pubValue:number;
+    public pubValue:number = 1234321;
     private privValue:string;
     public static forAll:number;
 

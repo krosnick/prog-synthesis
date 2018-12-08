@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-  },
+  "scripts": {},
   "author": "",
   "dependencies": {
+    "monaco-editor": "^0.15.6",
     "typescript": "^2.9.2"
   },
   "devDependencies": {
