@@ -6,9 +6,9 @@ function getResults() {
 	// Write the following to the exampleInput.ts file
 	user_input = window.getSelection().toString().trim();
 	// fp = new File('exampleInput.ts');
-	var file = new File(user_input, 'exampleInput.ts', {
-  		type: 'text/plain',
-	});
-	file.open('w')
-	file.write(user_input);
+	// var file = new File(user_input, 'exampleInput.ts', {
+ //  		type: 'text/plain',
+	// });
+	// file.open('w')
+	// file.write(user_input);
 }
