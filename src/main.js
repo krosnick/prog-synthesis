@@ -56,7 +56,9 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     /*console.log("jsAndWebAPIVariableStatements");
     console.log(jsAndWebAPIVariableStatements);*/
     //console.log(jsAndWebAPIInterfaceDeclarations);
+    //console.log(jsAndWebAPIVariableStatements[6]);
     addInheritedMethodsPropertiesToNativeJSVariables(jsAndWebAPIVariableStatements, jsAndWebAPIInterfaceDeclarations);
+    //console.log(jsAndWebAPIVariableStatements[6]);
     //console.log("ecmaScriptFileContents");
     //console.log(ecmaScriptFileContents);
     // Process native JS/TS (from lib.d.ts)
@@ -143,37 +145,48 @@ function addInheritedMethodsPropertiesToNativeJSVariables(jsAndWebAPIVariableSta
         var variableType = variableStatement.type;
         // Find variableType in jsAndWebAPIInterfaceDeclarations,
         // and add the methods and properties to this jsAndWebAPIVariableStatement DocEntry
-        var interfaceObject = jsAndWebAPIInterfaceDeclarations[variableType];
-        if (interfaceObject) {
+        var typeInterfaceObject = jsAndWebAPIInterfaceDeclarations[variableType];
+        if (typeInterfaceObject) {
+            addMethodsPropertiesOfInterfaceType(variableStatement, typeInterfaceObject);
+        }
+        var ownNameInterfaceObject = jsAndWebAPIInterfaceDeclarations[variableStatement.name];
+        if (ownNameInterfaceObject) {
+            addMethodsPropertiesOfInterfaceType(variableStatement, ownNameInterfaceObject);
+        }
+        /*if(typeInterfaceObject){
             //console.log(interfaceObject);
-            /*if(variableStatement.name === "Math"){
+
+            if(variableStatement.name === "Number"){
                 console.log(variableStatement);
-            }*/
+            }
+
             // Note: we don't distinguish between instance/static for interfaces, they're both set to the same list of methods or properties
-            if (variableStatement.methods) {
-                if (!variableStatement.methods.instanceMethods) {
+
+            if(variableStatement.methods){
+                if(!variableStatement.methods.instanceMethods){
                     variableStatement.methods.instanceMethods = [];
                 }
-                variableStatement.methods.instanceMethods = variableStatement.methods.instanceMethods.concat(interfaceObject.methods.instanceMethods);
+                variableStatement.methods.instanceMethods = variableStatement.methods.instanceMethods.concat(typeInterfaceObject.methods.instanceMethods);
+            }else{
+                variableStatement.methods = {"instanceMethods": []};
+                variableStatement.methods.instanceMethods = typeInterfaceObject.methods.instanceMethods;
             }
-            else {
-                variableStatement.methods = { "instanceMethods": [] };
-                variableStatement.methods.instanceMethods = interfaceObject.methods.instanceMethods;
-            }
-            if (variableStatement.properties) {
-                if (!variableStatement.properties.instanceProperties) {
+
+            if(variableStatement.properties){
+                if(!variableStatement.properties.instanceProperties){
                     variableStatement.properties.instanceProperties = [];
                 }
-                variableStatement.properties.instanceProperties = variableStatement.properties.instanceProperties.concat(interfaceObject.properties.instanceProperties);
+                variableStatement.properties.instanceProperties = variableStatement.properties.instanceProperties.concat(typeInterfaceObject.properties.instanceProperties);
+            }else{
+                variableStatement.properties = {"instanceProperties": []};
+                variableStatement.properties.instanceProperties = typeInterfaceObject.properties.instanceProperties;
             }
-            else {
-                variableStatement.properties = { "instanceProperties": [] };
-                variableStatement.properties.instanceProperties = interfaceObject.properties.instanceProperties;
-            }
-            /*if(variableStatement.name === "Math"){
+
+            
+            if(variableStatement.name === "Number"){
                 console.log(variableStatement);
-            }*/
-        }
+            }
+        }*/
     });
     /*interfaceNames.forEach(function(interfaceName:string){
         const jsAndWebAPIVariableStatement:DocEntry = jsAndWebAPIVariableStatements[interfaceName];
@@ -194,6 +207,37 @@ function addInheritedMethodsPropertiesToNativeJSVariables(jsAndWebAPIVariableSta
             // Remove this element?
         }
     });*/
+}
+function addMethodsPropertiesOfInterfaceType(variableStatementDocEntry, interfaceDocEntry) {
+    //console.log(interfaceObject);
+    if (variableStatementDocEntry.name === "Number") {
+        //console.log(variableStatementDocEntry);
+    }
+    // Note: we don't distinguish between instance/static for interfaces, they're both set to the same list of methods or properties
+    if (variableStatementDocEntry.methods) {
+        if (!variableStatementDocEntry.methods.instanceMethods) {
+            variableStatementDocEntry.methods.instanceMethods = [];
+        }
+        variableStatementDocEntry.methods.instanceMethods = variableStatementDocEntry.methods.instanceMethods.concat(interfaceDocEntry.methods.instanceMethods);
+    }
+    else {
+        variableStatementDocEntry.methods = { "instanceMethods": [] };
+        variableStatementDocEntry.methods.instanceMethods = interfaceDocEntry.methods.instanceMethods;
+    }
+    if (variableStatementDocEntry.properties) {
+        if (!variableStatementDocEntry.properties.instanceProperties) {
+            variableStatementDocEntry.properties.instanceProperties = [];
+        }
+        variableStatementDocEntry.properties.instanceProperties = variableStatementDocEntry.properties.instanceProperties.concat(interfaceDocEntry.properties.instanceProperties);
+    }
+    else {
+        variableStatementDocEntry.properties = { "instanceProperties": [] };
+        variableStatementDocEntry.properties.instanceProperties = interfaceDocEntry.properties.instanceProperties;
+    }
+    if (variableStatementDocEntry.name === "Number") {
+        //console.log(variableStatementDocEntry);
+        console.log(variableStatementDocEntry.methods.instanceMethods);
+    }
 }
 function findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap, mapInstanceNameToObject) {
     var synthesizedCandidateSolutions = [];
