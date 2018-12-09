@@ -25,13 +25,15 @@ export interface DocEntry {
 
 export interface FileContents{
   classDeclarations: DocEntry[],
-  interfaceDeclarations: DocEntry[],
+  /*interfaceDeclarations: DocEntry[],*/
+  interfaceDeclarations: {[interfaceName:string]:DocEntry},
   functionDeclarations: DocEntry[],
   variableStatements: DocEntry[]
 };
 
 
 let inputFileContentsString:string;
+let isDeclarationFile;
 
 /** Generate documentation for all classes in a set of .ts files */
 export function getDocEntrys(
@@ -50,14 +52,14 @@ export function getDocEntrys(
   
   let fileContents:FileContents = {
     classDeclarations: [],
-    interfaceDeclarations: [],
+    interfaceDeclarations: {},
     functionDeclarations: [],
     variableStatements: []
   };
 
   // Visit every sourceFile in the program
   for (const sourceFile of program.getSourceFiles()) {
-    const isDeclarationFile = sourceFile.isDeclarationFile;
+    isDeclarationFile = sourceFile.isDeclarationFile;
     if(checkDeclarationFiles){
       // Walk the tree to search for nodes (classes, variable statements, etc)
       ts.forEachChild(sourceFile, visit);
@@ -121,11 +123,14 @@ export function getDocEntrys(
       let list = serializeFunction(symbol);
       list.forEach(function(item) { fileContents.functionDeclarations.push(item) })
     } else if(ts.isInterfaceDeclaration(node)){
+      //console.log("isInterfaceDeclaration");
       let symbol = checker.getSymbolAtLocation(node.name);
+      //console.log(symbol.name);
       if (symbol) {
         const classEntries:DocEntry[] = serializeClass(symbol);
         classEntries.forEach(function(entry){
-          fileContents.interfaceDeclarations.push(entry);
+          //fileContents.interfaceDeclarations.push(entry);
+          fileContents.interfaceDeclarations[entry.name] = entry;
           //console.log(entry.name);
           /*if(entry.name === "Date"){
             //console.log(entry);
@@ -194,6 +199,8 @@ export function getDocEntrys(
     
       
     const codeLine:string = node.getText();
+    //const codeLine = symbol.valueDeclaration.getText();
+    //console.log(codeLine);
     const indexOfEqualSign:number = codeLine.indexOf("=") + 1;
     const indexOfSemicolon:number = codeLine.indexOf(";");
     const valueString:string = codeLine.substring(indexOfEqualSign, indexOfSemicolon).trim();
@@ -225,15 +232,113 @@ export function getDocEntrys(
       varValue = eval(inputFileContentsString + "\n" + valueString);
     }*/
 
-    try{
-      varValue = nonStrictEval("(" + valueString + ")");
-    }catch{
+    /*console.log("valueString");
+    console.log(valueString);*/
+    
+    // We only want to include things that are in global scope
+      // So shouldn't be inside of an interface or class, etc
+    /*console.log("symbol.name");
+    console.log(symbol.name);
+    console.log("ts.SyntaxKind[node.parent.kind]");
+    console.log(ts.SyntaxKind[node.parent.kind]);*/
+    //if(ts.SyntaxKind[node.parent.kind] === "SourceFile"){
+    
+    // Needs to have "declare" in it (i.e., global scope)
+    /*if(symbol.name === "onabort"){
+      console.log(symbol.name);
+      //console.log(codeLine);
+      console.log(node.getFullText()); 
+    }*/
+    
+    //if((codeLine.indexOf("declare ") > -1 && (codeLine.indexOf("var ") > -1 || codeLine.indexOf("const ") > -1))){
+    if((codeLine.indexOf("=") === -1 || codeLine.indexOf("=") === codeLine.indexOf("=>"))){ // Just a declaration statement, no value defined
+      varValue = symbol.name;
+
+      if(symbol.name === "Array"){
+        //console.log(symbol);
+        //console.log(symbol.members); 
+        //console.log(symbol.exports);
+        //console.log(symbol.globalExports);
+        //console.log(symbol.members)
+        /*const methodsAndProperties:{
+          methods: DocEntry[];
+          properties: DocEntry[];
+        } = processMethodsAndPropertiesForJSDeclarations(symbol.members);*/
+        //console.log(methodsAndProperties);
+      }
+      /*console.log(varValue);
+      console.log(node.getText());*/
+      /*if(symbol.name === "NaN"){
+        // console.log("symbol.name");
+        // console.log(symbol.name);
+        // console.log("ts.SyntaxKind[node.parent.kind]");
+        // console.log(ts.SyntaxKind[node.parent.kind]);
+        // console.log("ts.SyntaxKind[node.kind]");
+        // console.log(ts.SyntaxKind[node.kind]);
+        // console.log("ts.SyntaxKind.ConstKeyword: " + ts.SyntaxKind.ConstKeyword);
+        // console.log("ts.SyntaxKind.DeclareKeyword: " + ts.SyntaxKind.DeclareKeyword);
+        //console.log(symbol);
+        console.log("---" + symbol.name + "---");
+        const nodeChildren = node.getChildren();
+        nodeChildren.forEach(function(nodeChild){
+          //console.log(ts.SyntaxKind[nodeChild.kind]);
+          if(ts.SyntaxKind[nodeChild.kind] === "SyntaxList" || ts.SyntaxKind[nodeChild.kind] === "VariableDeclarationList"){
+            const syntaxListChildren = nodeChild.getChildren();
+            syntaxListChildren.forEach(function(grandChild){
+              //console.log(ts.SyntaxKind[grandChild.kind]);
+            });
+          }
+        });
+        //console.log(node.getChildren());
+      }else if(symbol.name === "onabort"){
+        console.log("---" + symbol.name + "---");
+        const nodeChildren = node.getChildren();
+        nodeChildren.forEach(function(nodeChild){
+          //console.log(ts.SyntaxKind[nodeChild.kind]);
+          if(ts.SyntaxKind[nodeChild.kind] === "SyntaxList" || ts.SyntaxKind[nodeChild.kind] === "VariableDeclarationList"){
+            const syntaxListChildren = nodeChild.getChildren();
+            syntaxListChildren.forEach(function(grandChild){
+              //console.log(ts.SyntaxKind[grandChild.kind]);
+            });
+          }
+        });
+      }else if(symbol.name === "Collator"){
+        console.log("---" + symbol.name + "---");
+        const nodeChildren = node.getChildren();
+        nodeChildren.forEach(function(nodeChild){
+          //console.log(ts.SyntaxKind[nodeChild.kind]);
+          if(ts.SyntaxKind[nodeChild.kind] === "SyntaxList" || ts.SyntaxKind[nodeChild.kind] === "VariableDeclarationList"){
+            const syntaxListChildren = nodeChild.getChildren();
+            syntaxListChildren.forEach(function(grandChild){
+              //console.log(ts.SyntaxKind[grandChild.kind]);
+            });
+          }
+        });
+      }*/
+      /*else if(symbol.name === "constructor"){
+        console.log("symbol.name");
+        console.log(symbol.name);
+        console.log("ts.SyntaxKind[node.parent.kind]");
+        console.log(ts.SyntaxKind[node.parent.kind]);
+        console.log("ts.SyntaxKind[node.kind]");
+        console.log(ts.SyntaxKind[node.kind]);
+      }*/
+    }else{
       try{
-        varValue = nonStrictEval("(" + inputFileContentsString + valueString + ")");
+        varValue = nonStrictEval("(" + valueString + ")");
       }catch{
-        varValue = nonStrictEval(inputFileContentsString + valueString);
+        try{
+          varValue = nonStrictEval("(" + inputFileContentsString + valueString + ")");
+        }catch{
+          varValue = nonStrictEval(inputFileContentsString + valueString);
+        }
       }
     }
+    //}else{
+      /*console.log("DOES NOT CONTAIN DECLARE, OR VAR OR CONST");
+      console.log(node.getText());*/
+    //}
+    //}
     
     /*console.log("full thing to eval");
     console.log(inputFileContentsString + valueString);
@@ -314,15 +419,60 @@ export function getDocEntrys(
     //console.log(symbol.exports.size);
     //symbol.
 
-    const memberMethodsProperties:{
+    let memberMethodsProperties:{
       methods: DocEntry[];
       properties: DocEntry[];
-    } = processMethodsAndProperties(symbol.members);
+    };
 
-    const staticMethodsProperties:{
+    let staticMethodsProperties:{
       methods: DocEntry[];
       properties: DocEntry[];
-    } = processMethodsAndProperties(symbol.exports);
+    };
+
+    if(!isDeclarationFile){
+      memberMethodsProperties = processMethodsAndProperties(symbol.members);
+      staticMethodsProperties = processMethodsAndProperties(symbol.exports);
+      constructorDetails.methods = {
+        "instanceMethods": memberMethodsProperties.methods,
+        "staticMethods": staticMethodsProperties.methods
+      };
+      constructorDetails.properties = {
+        "instanceProperties": memberMethodsProperties.properties,
+        "staticProperties": staticMethodsProperties.properties
+      };
+    }else{
+      //console.log(symbol.name);
+      const interfaceMethodsProperties:{
+        methods: DocEntry[];
+        properties: DocEntry[];
+      } = processMethodsAndPropertiesForJSDeclarations(symbol.name, symbol.members);
+      //console.log(test);
+      //if(symbol.name === "ObjectConstructor"){
+      /*if(symbol.name === "Math"){
+      //if(symbol.name === "ReadonlyArray"){
+        console.log(interfaceMethodsProperties);
+      }*/
+
+      constructorDetails.methods = {
+        "instanceMethods": interfaceMethodsProperties.methods,
+        "staticMethods": interfaceMethodsProperties.methods
+      };
+      constructorDetails.properties = {
+        "instanceProperties": interfaceMethodsProperties.properties,
+        "staticProperties": interfaceMethodsProperties.properties
+      };
+    }
+  //if(symbol.name === "ObjectConstructor"){
+    //if(symbol.name === "ArrayConstructor"){
+    //if(symbol.name === "Math"){
+    /*console.log("symbol.members");
+    console.log(symbol.members);*/
+    //console.log(symbol);
+
+    // Do this only if declaration file
+
+  //}    
+
     /*// Instance methods + properties
     const iter:ts.Iterator<ts.__String> = symbol.members.keys();
     let memberCounter = 0;
@@ -362,20 +512,14 @@ export function getDocEntrys(
         }
       }
     }*/
-    //constructorDetails.methods = methodsList;
-    constructorDetails.methods = {
+    /*constructorDetails.methods = {
       "instanceMethods": memberMethodsProperties.methods,
       "staticMethods": staticMethodsProperties.methods
     };
-    /*console.log("constructorDetails.methods");
-    console.log(constructorDetails.methods);*/
-    //constructorDetails.properties = memberMethodsProperties.properties;
     constructorDetails.properties = {
       "instanceProperties": memberMethodsProperties.properties,
       "staticProperties": staticMethodsProperties.properties
-    };
-    /*console.log("constructorDetails.properties");
-    console.log(constructorDetails.properties);*/
+    };*/
     return detailsList;
   }
 
@@ -423,6 +567,89 @@ export function getDocEntrys(
                 methodsList.push(symbolDetails);
               }
             }
+          }
+        }
+      }
+    }
+    return {
+      "methods": methodsList,
+      "properties": propertiesList
+    };
+  }
+
+  function processMethodsAndPropertiesForJSDeclarations(parentSymbolName:string, methodsAndProperties:ts.UnderscoreEscapedMap<ts.Symbol>):{methods:DocEntry[],properties:DocEntry[]}{
+  //function processMethodsAndPropertiesForJSDeclarations(parentSymbolName:string, methodsAndProperties:ts.UnderscoreEscapedMap<ts.Symbol>):{methods:{[interfaceName:string]: DocEntry},properties:{[interfaceName:string]: DocEntry}}{
+    let methodsList:DocEntry[] = [];
+    let propertiesList:DocEntry[] = [];
+
+    if(methodsAndProperties && methodsAndProperties.size > 0){
+      const iter:ts.Iterator<ts.__String> = methodsAndProperties.keys();
+      let memberCounter = 0;
+      while(memberCounter < methodsAndProperties.size){
+        const memberItem = iter.next();
+        const memberName = memberItem.value;
+        //console.log(memberName);
+        memberCounter += 1;
+
+        if(memberName !== "__constructor"){
+          const thisSymbol:ts.Symbol = methodsAndProperties.get(memberName);
+          //console.log(thisSymbol);
+          let isPublic = true;
+          //console.log(thisSymbol.declarations[0].modifiers);
+          if(thisSymbol.declarations){
+            /*if(thisSymbol.declarations[0] && thisSymbol.declarations[0].modifiers && thisSymbol.declarations[0].modifiers[0]){
+              if(thisSymbol.declarations[0].modifiers[0].kind !== ts.SyntaxKind.PublicKeyword){
+                isPublic = false;
+              }
+            }*/
+            //if(isPublic){
+              let symbolDetails = serializeSymbol(thisSymbol);
+              let symType = checker.getTypeOfSymbolAtLocation(
+                thisSymbol,
+                thisSymbol.valueDeclaration!
+              );
+              const sigInfo:DocEntry[] = symType
+                .getCallSignatures()
+                .map(serializeSignature);
+
+              //console.log(sigInfo);
+              if(sigInfo.length > 0){
+                symbolDetails.signatureInfo = sigInfo;
+              }
+              // Do this later for the actual instantiated object
+              /*else{
+                let memberType = Object.prototype.toString.call(eval(parentSymbolName + "." + thisSymbol.name)).slice(8, -1);
+                if(memberType === "Boolean" || memberType === "Null" || memberType === "Undefined" || memberType === "Number" || memberType === "String"){
+                  memberType = memberType.toLowerCase();
+                }
+                symbolDetails.type = memberType;
+              }*/
+              //console.log(sigInfo);
+
+              //console.log(typeof eval(parentSymbolName + "." + thisSymbol.name));
+              //console.log(typeof [1,2]);
+              //console.log(Object.prototype.toString.call(eval(parentSymbolName + "." + thisSymbol.name)).slice(8, -1));
+              /*if(memberName === "E"){
+                //console.log(thisSymbol);
+                console.log(typeof eval(parentSymbolName + "." + thisSymbol.name));
+              }*/
+
+              //console.log(memberName);
+              /*if(parentSymbolName === "Math"){
+                console.log(ts.SyntaxKind[thisSymbol.declarations[0].kind]);
+              }*/
+
+              if(thisSymbol.declarations[0].kind === ts.SyntaxKind.PropertySignature){
+                propertiesList.push(symbolDetails);
+              }else if(thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodSignature){
+                methodsList.push(symbolDetails);
+              }
+              /*if(thisSymbol.declarations[0].kind === ts.SyntaxKind.PropertyDeclaration){
+                propertiesList.push(symbolDetails);
+              }else if(thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodDeclaration){
+                methodsList.push(symbolDetails);
+              }*/
+            //}
           }
         }
       }

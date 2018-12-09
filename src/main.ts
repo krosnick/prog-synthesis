@@ -5,6 +5,8 @@ import * as _ from "lodash";
 import * as fs from "fs";
 //const nonStrictEval = require('./nonStrictEval');
 
+const javascript_declaration_file = "./lib.d.ts";
+
 let transpiledInputFileContentsString;
 function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str:string]:string[]} {
     
@@ -26,8 +28,8 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
     const inputFileContents:FileContents = getDocEntrys([fileNameRequiredInput], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
-    //}, true);
     }, false, transpiledInputFileContentsString);
+    //}, true, transpiledInputFileContentsString);
     //console.log("inputFileContents");
     //console.log(inputFileContents);
 
@@ -38,6 +40,37 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
     }, false, inputFileContentsString);
     // console.log("outputFileContents");
     // console.log(outputFileContents);
+
+    const ecmaScriptFileContents:FileContents = getDocEntrys([javascript_declaration_file], {
+        target: ts.ScriptTarget.ES5,
+        module: ts.ModuleKind.CommonJS
+    }, true, inputFileContentsString);
+
+    const jsAndWebAPIInterfaceDeclarations = ecmaScriptFileContents["interfaceDeclarations"];
+    const jsAndWebAPIFunctionDeclarations = ecmaScriptFileContents["functionDeclarations"];
+    const jsAndWebAPIVariableStatements = ecmaScriptFileContents["variableStatements"];
+    /*console.log("jsAndWebAPIFunctionDeclarations.length");
+    console.log(jsAndWebAPIFunctionDeclarations.length);
+    console.log("jsAndWebAPIVariableStatements.length");
+    console.log(jsAndWebAPIVariableStatements.length);*/
+
+
+    // Now, need to do 2 things
+        // 1. Process jsAndWebAPIVariableStatements, using jsAndWebAPIInterfaceDeclarations,
+            // adding more properties and methods to the variable statements
+        // 2. Potentially(?) process inputFileContents using jsAndWebAPIVariableStatements (or other)
+            // adding more properties and methods to the variable statements 
+
+    // Process jsAndWebAPIVariableStatements, using jsAndWebAPIInterfaceDeclarations,
+        // adding more properties and methods to the variable statements
+    /*console.log("jsAndWebAPIVariableStatements");
+    console.log(jsAndWebAPIVariableStatements);*/
+    //console.log(jsAndWebAPIInterfaceDeclarations);
+
+    addInheritedMethodsPropertiesToNativeJSVariables(jsAndWebAPIVariableStatements, jsAndWebAPIInterfaceDeclarations);   
+
+    //console.log("ecmaScriptFileContents");
+    //console.log(ecmaScriptFileContents);
 
     // Process native JS/TS (from lib.d.ts)
     /*const tsNativeContents:FileContents = getDocEntrys(["./lib.d.ts"], {
@@ -126,6 +159,73 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
     console.log(varToSolutionsMap);
 
     return varToSolutionsMap;
+}
+
+function addInheritedMethodsPropertiesToNativeJSVariables(jsAndWebAPIVariableStatements, jsAndWebAPIInterfaceDeclarations){
+    //const interfaceNames:string[] = Object.keys(jsAndWebAPIVariableStatements);
+    //console.log(jsAndWebAPIVariableStatements);
+    jsAndWebAPIVariableStatements.forEach(function(variableStatement:DocEntry){
+        //console.log(variableStatement.name);
+        const variableType = variableStatement.type;
+
+        // Find variableType in jsAndWebAPIInterfaceDeclarations,
+        // and add the methods and properties to this jsAndWebAPIVariableStatement DocEntry
+    
+        const interfaceObject:DocEntry = jsAndWebAPIInterfaceDeclarations[variableType];
+        if(interfaceObject){
+            //console.log(interfaceObject);
+
+            /*if(variableStatement.name === "Math"){
+                console.log(variableStatement);
+            }*/
+
+            // Note: we don't distinguish between instance/static for interfaces, they're both set to the same list of methods or properties
+
+            if(variableStatement.methods){
+                if(!variableStatement.methods.instanceMethods){
+                    variableStatement.methods.instanceMethods = [];
+                }
+                variableStatement.methods.instanceMethods = variableStatement.methods.instanceMethods.concat(interfaceObject.methods.instanceMethods);
+            }else{
+                variableStatement.methods = {"instanceMethods": []};
+                variableStatement.methods.instanceMethods = interfaceObject.methods.instanceMethods;
+            }
+
+            if(variableStatement.properties){
+                if(!variableStatement.properties.instanceProperties){
+                    variableStatement.properties.instanceProperties = [];
+                }
+                variableStatement.properties.instanceProperties = variableStatement.properties.instanceProperties.concat(interfaceObject.properties.instanceProperties);
+            }else{
+                variableStatement.properties = {"instanceProperties": []};
+                variableStatement.properties.instanceProperties = interfaceObject.properties.instanceProperties;
+            }
+
+            
+            /*if(variableStatement.name === "Math"){
+                console.log(variableStatement);
+            }*/
+        }
+    });
+    /*interfaceNames.forEach(function(interfaceName:string){
+        const jsAndWebAPIVariableStatement:DocEntry = jsAndWebAPIVariableStatements[interfaceName];
+        const variableType = jsAndWebAPIVariableStatement.type;
+        if(variableType.indexOf(" ") === -1){
+            // variableType in native JS
+            
+            // Find variableType in jsAndWebAPIInterfaceDeclarations,
+            // and add the methods and properties to this jsAndWebAPIVariableStatement DocEntry
+
+            const interfaceDocEntry:DocEntry = jsAndWebAPIInterfaceDeclarations[variableType];
+            //console.log(interfaceDocEntry);
+
+            //interfaceDocEntry.properties.
+
+        }else{
+            // In other API
+            // Remove this element?
+        }
+    });*/
 }
 
 function findSolution(outputVar:DocEntry, possibleMethodsAndVariables, variableTypeMap, mapInstanceNameToObject):string[]{
