@@ -91,7 +91,33 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
     //console.log(jsAndWebAPIFunctionDeclarations);
     possibleMethodsAndVariables["possibleFunctions"] = possibleMethodsAndVariables["possibleFunctions"].concat(jsAndWebAPIFunctionDeclarations);
     possibleMethodsAndVariables["possibleVariables"] = possibleMethodsAndVariables["possibleVariables"].concat(jsAndWebAPIVariableStatements);
-    //possibleMethodsAndVariables["mapClassToInstanceProperties"];
+    /*console.log('possibleMethodsAndVariables["mapClassToInstanceProperties"]');
+    console.log(possibleMethodsAndVariables["mapClassToInstanceProperties"]);
+    console.log('jsAndWebAPIVariableStatements');
+    console.log(jsAndWebAPIVariableStatements);*/
+
+    /*console.log('possibleMethodsAndVariables["mapClassToInstanceMethods"]');
+    console.log(possibleMethodsAndVariables["mapClassToInstanceMethods"]);
+    console.log('jsAndWebAPIVariableStatements');
+    console.log(jsAndWebAPIVariableStatements);*/
+
+    
+
+    for(let i = 0; i < jsAndWebAPIVariableStatements.length; i++){
+        const varStatementObject:DocEntry = jsAndWebAPIVariableStatements[i];
+        const varStatementObjectName = varStatementObject.name;
+        //if(varStatementObjectName === "Object" || varStatementObjectName === "Math" || varStatementObjectName === "String" || varStatementObjectName === "Date"){
+        if(varStatementObjectName === "Object" || varStatementObjectName === "Math"){
+            if(varStatementObject.properties && varStatementObject.properties.instanceProperties.length > 0){
+                // There are properties for this object
+                // Add to possibleMethodsAndVariables["mapClassToInstanceProperties"]
+                possibleMethodsAndVariables["mapClassToInstanceProperties"][varStatementObjectName] = varStatementObject.properties.instanceProperties;
+            }
+            if(varStatementObject.methods && varStatementObject.methods.instanceMethods.length > 0){
+                possibleMethodsAndVariables["mapClassToInstanceMethods"][varStatementObjectName] = varStatementObject.methods.instanceMethods;
+            }
+        }
+    }
 
     let variableTypeMap = {};
     variableTypeMap["possibleVariables"] = mapVariablesToTypes(possibleMethodsAndVariables["possibleVariables"]);
@@ -141,6 +167,7 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
         varToSolutionsMap[outputVar.name] = findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap);
     });*/
 
+    //console.log("beforeFindSolution");
     // for now, assume only 1 output var spec
     varToSolutionsMap[outputFileContents.variableStatements[0].name] = findSolution(outputFileContents.variableStatements[0], possibleMethodsAndVariables, variableTypeMap, possibleMethodsAndVariables["mapInstanceNameToObject"]);
     console.log("varToSolutionsMap");
@@ -208,6 +235,7 @@ function addMethodsPropertiesOfInterfaceType(variableStatementDocEntry:DocEntry,
 function findSolution(outputVar:DocEntry, possibleMethodsAndVariables, variableTypeMap, mapInstanceNameToObject):string[]{
     let synthesizedCandidateSolutions:string[] = [];
     
+    //console.log("before searching possibleFunctions");
     const possibleFunctions = possibleMethodsAndVariables["possibleFunctions"];
     for(let i = 0; i < possibleFunctions.length; i++){
         const funcObject = possibleFunctions[i];
@@ -218,9 +246,11 @@ function findSolution(outputVar:DocEntry, possibleMethodsAndVariables, variableT
         }
     }
 
+    //console.log("before searching mapClassToInstanceMethods");
     const mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
     synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithMethods(outputVar, mapClassToInstanceMethods, variableTypeMap, mapInstanceNameToObject));
-    
+    //console.log("after searching mapClassToInstanceMethods");
+
     const mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
     synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithMethods(outputVar, mapClassToStaticMethods, variableTypeMap, mapInstanceNameToObject));
 
@@ -238,6 +268,10 @@ function findSolutionWithMethods(outputVar:DocEntry, mapClassToMethods, variable
         for(let j = 0; j < classOrInstanceMethods.length; j++){
             const staticMethodObject = classOrInstanceMethods[j];
             const aSolution = findSolutionWithGivenMethodOrFunction(outputVar, staticMethodObject, variableTypeMap, classOrInstanceName, mapInstanceNameToObject);
+            /*if(staticMethodObject.name === "keys" && classOrInstanceName === "Object"){
+                console.log("Object.keys");
+                console.log("aSolution: " + aSolution);
+            }*/
             if(aSolution){
                 synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(aSolution);
             }
@@ -250,8 +284,13 @@ function findSolutionWithMethods(outputVar:DocEntry, mapClassToMethods, variable
 function findSolutionWithGivenMethodOrFunction(outputVar:DocEntry, funcDocEntry:DocEntry, variableTypeMap, classOrInstanceName:string, mapInstanceNameToObject):string[]{
 
     const parameterOptions:({name:string, val:any})[][] = getParameterOptions(funcDocEntry, variableTypeMap);
-    //console.log(parameterOptions);
     
+    /*if(funcDocEntry.name === "keys" && classOrInstanceName === "Object"){
+        console.log("Object.keys");
+        console.log(funcDocEntry);
+        console.log(parameterOptions);
+    }*/
+
     let someParamNotSatisfiable:boolean = false;
     parameterOptions.forEach(function(optionsForParamIndexI){
         if(optionsForParamIndexI.length === 0){
@@ -504,9 +543,47 @@ function getParameterOptions(funcDocEntry:DocEntry, variableTypeMap):({name:stri
             // of ({name:string, val:any})[].
         const singleParamOptions:({name:string, val:any})[] = [];
 
+        /*if(funcDocEntry.name === "keys"){
+            console.log(paramType);
+            console.log(variableTypeMap["possibleVariables"]);
+        }*/
+
+        let possibleVariablesOfType = variableTypeMap["possibleVariables"][paramType];
+
+        if(paramType === "{}" || paramType === "object"){
+            if(!possibleVariablesOfType){
+                possibleVariablesOfType = [];
+            }
+            // Use any variable that is an object
+            // Go through variableTypeMap["possibleVariables"] to find any variable that is an object
+            const possibleVariableNames = Object.keys(variableTypeMap["possibleVariables"]);
+            //let objectVariables = [];
+            possibleVariableNames.forEach(function(varName){
+                const varType = variableTypeMap["possibleVariables"][varName][0].type;
+                //console.log(varType);
+                //console.log(eval(varType));
+                //console.log(typeof varType);
+
+                let actualType;
+                try{
+                    actualType = typeof eval(varType);
+                    if(actualType === "object"){
+                        possibleVariablesOfType.push(variableTypeMap["possibleVariables"][varName][0]);
+                    }
+                }catch{
+                    possibleVariablesOfType.push(variableTypeMap["possibleVariables"][varName][0]);
+                }
+                /*if(typeof varType === "object"){
+                    console.log(varName);
+                }*/
+            });
+            //console.log("objectVariables");
+            //console.log(possibleVariablesOfType);
+        }
+
+        //console.log(possibleVariablesOfType);
         // This would not work for paramType="any"
             // (in that case, maybe consider all variables in variableTypeMap)
-        const possibleVariablesOfType = variableTypeMap["possibleVariables"][paramType];
         if(possibleVariablesOfType){
             possibleVariablesOfType.forEach(function(variable){ // variable is DocEntry?
                 const variableName = variable.name;
@@ -560,8 +637,10 @@ function getParameterOptions(funcDocEntry:DocEntry, variableTypeMap):({name:stri
             });
         }
 
-        //console.log("singleParamOptions");
-        //console.log(singleParamOptions);
+        /*if(paramType === "{}"){
+            console.log("singleParamOptions");
+            console.log(singleParamOptions);
+        }*/
 
         paramOptions.push(singleParamOptions);
 

@@ -583,6 +583,9 @@ function typesMatch(canType, otherType) {
             return true;
         }
     }
+    else if (canType === "{}" && (typeof otherType) === "object") {
+        return true;
+    }
     return false;
 }
 function paramsAcceptable(sigInfo, inp) {

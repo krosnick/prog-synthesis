@@ -698,6 +698,9 @@ function typesMatch(canType: string, otherType: string) {
       return true;
     }
   }
+  else if(canType === "{}" && (typeof otherType) === "object"){
+    return true;
+  }
   return false;
 }
 

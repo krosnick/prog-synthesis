@@ -78,7 +78,29 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     //console.log(jsAndWebAPIFunctionDeclarations);
     possibleMethodsAndVariables["possibleFunctions"] = possibleMethodsAndVariables["possibleFunctions"].concat(jsAndWebAPIFunctionDeclarations);
     possibleMethodsAndVariables["possibleVariables"] = possibleMethodsAndVariables["possibleVariables"].concat(jsAndWebAPIVariableStatements);
-    //possibleMethodsAndVariables["mapClassToInstanceProperties"];
+    /*console.log('possibleMethodsAndVariables["mapClassToInstanceProperties"]');
+    console.log(possibleMethodsAndVariables["mapClassToInstanceProperties"]);
+    console.log('jsAndWebAPIVariableStatements');
+    console.log(jsAndWebAPIVariableStatements);*/
+    /*console.log('possibleMethodsAndVariables["mapClassToInstanceMethods"]');
+    console.log(possibleMethodsAndVariables["mapClassToInstanceMethods"]);
+    console.log('jsAndWebAPIVariableStatements');
+    console.log(jsAndWebAPIVariableStatements);*/
+    for (var i = 0; i < jsAndWebAPIVariableStatements.length; i++) {
+        var varStatementObject = jsAndWebAPIVariableStatements[i];
+        var varStatementObjectName = varStatementObject.name;
+        //if(varStatementObjectName === "Object" || varStatementObjectName === "Math" || varStatementObjectName === "String" || varStatementObjectName === "Date"){
+        if (varStatementObjectName === "Object" || varStatementObjectName === "Math") {
+            if (varStatementObject.properties && varStatementObject.properties.instanceProperties.length > 0) {
+                // There are properties for this object
+                // Add to possibleMethodsAndVariables["mapClassToInstanceProperties"]
+                possibleMethodsAndVariables["mapClassToInstanceProperties"][varStatementObjectName] = varStatementObject.properties.instanceProperties;
+            }
+            if (varStatementObject.methods && varStatementObject.methods.instanceMethods.length > 0) {
+                possibleMethodsAndVariables["mapClassToInstanceMethods"][varStatementObjectName] = varStatementObject.methods.instanceMethods;
+            }
+        }
+    }
     var variableTypeMap = {};
     variableTypeMap["possibleVariables"] = getTypeInfo_1.mapVariablesToTypes(possibleMethodsAndVariables["possibleVariables"]);
     variableTypeMap["mapClassToInstanceTypes"] = {};
@@ -118,6 +140,7 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     /*outputFileContents.variableStatements.forEach(function(outputVar:DocEntry){
         varToSolutionsMap[outputVar.name] = findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap);
     });*/
+    //console.log("beforeFindSolution");
     // for now, assume only 1 output var spec
     varToSolutionsMap[outputFileContents.variableStatements[0].name] = findSolution(outputFileContents.variableStatements[0], possibleMethodsAndVariables, variableTypeMap, possibleMethodsAndVariables["mapInstanceNameToObject"]);
     console.log("varToSolutionsMap");
@@ -172,6 +195,7 @@ function addMethodsPropertiesOfInterfaceType(variableStatementDocEntry, interfac
 }
 function findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap, mapInstanceNameToObject) {
     var synthesizedCandidateSolutions = [];
+    //console.log("before searching possibleFunctions");
     var possibleFunctions = possibleMethodsAndVariables["possibleFunctions"];
     for (var i = 0; i < possibleFunctions.length; i++) {
         var funcObject = possibleFunctions[i];
@@ -181,8 +205,10 @@ function findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap, m
             synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(aSolution);
         }
     }
+    //console.log("before searching mapClassToInstanceMethods");
     var mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
     synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithMethods(outputVar, mapClassToInstanceMethods, variableTypeMap, mapInstanceNameToObject));
+    //console.log("after searching mapClassToInstanceMethods");
     var mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
     synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithMethods(outputVar, mapClassToStaticMethods, variableTypeMap, mapInstanceNameToObject));
     return synthesizedCandidateSolutions;
@@ -196,6 +222,10 @@ function findSolutionWithMethods(outputVar, mapClassToMethods, variableTypeMap, 
         for (var j = 0; j < classOrInstanceMethods.length; j++) {
             var staticMethodObject = classOrInstanceMethods[j];
             var aSolution = findSolutionWithGivenMethodOrFunction(outputVar, staticMethodObject, variableTypeMap, classOrInstanceName, mapInstanceNameToObject);
+            /*if(staticMethodObject.name === "keys" && classOrInstanceName === "Object"){
+                console.log("Object.keys");
+                console.log("aSolution: " + aSolution);
+            }*/
             if (aSolution) {
                 synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(aSolution);
             }
@@ -205,7 +235,11 @@ function findSolutionWithMethods(outputVar, mapClassToMethods, variableTypeMap, 
 }
 function findSolutionWithGivenMethodOrFunction(outputVar, funcDocEntry, variableTypeMap, classOrInstanceName, mapInstanceNameToObject) {
     var parameterOptions = getParameterOptions(funcDocEntry, variableTypeMap);
-    //console.log(parameterOptions);
+    /*if(funcDocEntry.name === "keys" && classOrInstanceName === "Object"){
+        console.log("Object.keys");
+        console.log(funcDocEntry);
+        console.log(parameterOptions);
+    }*/
     var someParamNotSatisfiable = false;
     parameterOptions.forEach(function (optionsForParamIndexI) {
         if (optionsForParamIndexI.length === 0) {
@@ -442,9 +476,44 @@ function getParameterOptions(funcDocEntry, variableTypeMap) {
         // This will at least help with getting everything in the standard form
         // of ({name:string, val:any})[].
         var singleParamOptions = [];
+        /*if(funcDocEntry.name === "keys"){
+            console.log(paramType);
+            console.log(variableTypeMap["possibleVariables"]);
+        }*/
+        var possibleVariablesOfType = variableTypeMap["possibleVariables"][paramType];
+        if (paramType === "{}" || paramType === "object") {
+            if (!possibleVariablesOfType) {
+                possibleVariablesOfType = [];
+            }
+            // Use any variable that is an object
+            // Go through variableTypeMap["possibleVariables"] to find any variable that is an object
+            var possibleVariableNames = Object.keys(variableTypeMap["possibleVariables"]);
+            //let objectVariables = [];
+            possibleVariableNames.forEach(function (varName) {
+                var varType = variableTypeMap["possibleVariables"][varName][0].type;
+                //console.log(varType);
+                //console.log(eval(varType));
+                //console.log(typeof varType);
+                var actualType;
+                try {
+                    actualType = typeof eval(varType);
+                    if (actualType === "object") {
+                        possibleVariablesOfType.push(variableTypeMap["possibleVariables"][varName][0]);
+                    }
+                }
+                catch (_a) {
+                    possibleVariablesOfType.push(variableTypeMap["possibleVariables"][varName][0]);
+                }
+                /*if(typeof varType === "object"){
+                    console.log(varName);
+                }*/
+            });
+            //console.log("objectVariables");
+            //console.log(possibleVariablesOfType);
+        }
+        //console.log(possibleVariablesOfType);
         // This would not work for paramType="any"
         // (in that case, maybe consider all variables in variableTypeMap)
-        var possibleVariablesOfType = variableTypeMap["possibleVariables"][paramType];
         if (possibleVariablesOfType) {
             possibleVariablesOfType.forEach(function (variable) {
                 var variableName = variable.name;
@@ -489,8 +558,10 @@ function getParameterOptions(funcDocEntry, variableTypeMap) {
                 }
             });
         }
-        //console.log("singleParamOptions");
-        //console.log(singleParamOptions);
+        /*if(paramType === "{}"){
+            console.log("singleParamOptions");
+            console.log(singleParamOptions);
+        }*/
         paramOptions.push(singleParamOptions);
         //console.log(possibleVariables);
         // variableTypeMap["possibleVariables"]

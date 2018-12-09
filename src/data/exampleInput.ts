@@ -51,6 +51,7 @@ const numB:number = 20;
 const sum:number = numA + numB;*/
 //const testVar:number = addTwoNumbers(1,2);
 const numToWord:{[num:number]:string} = {1: "one", 2: "two", 3: "three"};
+//const numToWord = {1: "one", 2: "two", 3: "three"};
 const byeVar:string = 'bye';
 const numVar:number = 1001;
 const myArr:number[] = [1,5,3,7];
