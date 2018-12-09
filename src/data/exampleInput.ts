@@ -67,3 +67,6 @@ function returnValues(dict:{ [num:number]:string }) {
 function concatStrings(str1:string, str2:string){
 	return str1.concat(str2);
 }
+function return5():number{
+    return 5;
+}
