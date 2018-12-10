@@ -15,25 +15,28 @@
 <h2>Program Synthesis Demo</h2>
 <div id="grid" class="container">
 	<div class="row">
-		<div class="col-sm">
+		<div class="col">
 			<div id="container" style="width:800px;height:600px;border:1px solid grey"></div>
 		</div>
-		<div class="col-sm">
+		<div class="col">
 			<div id="synthesize" class="component">
-				<button type="button">
-					Synthesize
-				</button>
+				<button id="synthesizeButton" type="button" class="btn btn-primary btn-lg">Synthesize</button>
 				<div id="results">
-					Candidate Solutions
-					<div id="list_of_solutions">
+					<div id="origCodeContainer" class="innerComponent">
+						<div><i>Original Code</i></div>
+						<div id="origCode" class="codeText"></div>
+					</div>
+					<div><i>Candidate Solutions</i></div>
+					<div id="list_of_solutions" class="innerComponent">
 					</div>
 					<!----<div id="list_of_solutions" class="btn-group-vertical">
 					</div>-->
-					<div id="replace">
+					<!---<div id="replace">
 						<button type="button">
 							Replace
 						</button>
-					</div>
+					</div>-->
+					<button id="replaceButton" type="button" class="btn btn-secondary btn-sm">Replace in editor</button>
 				</div>
 			</div>
 			<div id="run" onclick="runProgram();" class="component">

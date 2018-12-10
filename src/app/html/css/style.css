@@ -35,6 +35,16 @@
 	padding-bottom: 10px;
 }
 
+.innerComponent {
+	padding-bottom: 10px;
+}
+
 #results {
 	display: none;
+}
+
+.codeText {
+	font-family: Menlo, Monaco, "Courier New", monospace;
+    font-weight: normal;
+    font-size: 12px !important;
 }
