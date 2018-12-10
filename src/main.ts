@@ -1,4 +1,4 @@
-import {getDocEntrys,FileContents,getPossibleFunctions,getPossibleMethodsAndVariables,mapVariablesToTypes, DocEntry} from "./getTypeInfo";
+import {getDocEntrys,isVariableStatement,FileContents,getPossibleFunctions,getPossibleMethodsAndVariables,mapVariablesToTypes, DocEntry} from "./getTypeInfo";
 import * as ts from "typescript";
 import {nonStrictEval} from "./nonStrictEval";
 import * as _ from "lodash";
@@ -8,13 +8,8 @@ import { type } from "os";
 
 const javascript_declaration_file = "./lib.d.ts";
 
-let transpiledInputFileContentsString;
-//export function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str:string]:string[]} {
-export function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):string[]{
-
-    // Get string of the code in the input file
-    let inputFileContentsString = fs.readFileSync(fileNameRequiredInput, "utf8");
-    transpiledInputFileContentsString = ts.transpileModule(inputFileContentsString,
+export function transpileCode(tsCodeString:string){
+    const transpiledCode:string = ts.transpileModule(tsCodeString,
         {
             compilerOptions: {
                 target: ts.ScriptTarget.ES5,
@@ -23,6 +18,25 @@ export function main(fileNameRequiredInput:string, fileNameRequiredOutput:string
             },
         }
     ).outputText;
+    return transpiledCode;
+}
+
+let transpiledInputFileContentsString;
+//export function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str:string]:string[]} {
+export function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):string[]{
+
+    // Get string of the code in the input file
+    let inputFileContentsString = fs.readFileSync(fileNameRequiredInput, "utf8");
+    /*transpiledInputFileContentsString = ts.transpileModule(inputFileContentsString,
+        {
+            compilerOptions: {
+                target: ts.ScriptTarget.ES5,
+                module: ts.ModuleKind.CommonJS,
+                noImplicitUseStrict: true
+            },
+        }
+    ).outputText;*/
+    transpiledInputFileContentsString = transpileCode(inputFileContentsString);
     //console.log("fileContent");
     //console.log(fileContent);
 
@@ -36,6 +50,16 @@ export function main(fileNameRequiredInput:string, fileNameRequiredOutput:string
     //console.log(inputFileContents);
 
     // Process required output; save as DocEntry[]
+
+    const isVarStatement:boolean = isVariableStatement([fileNameRequiredOutput], {
+        target: ts.ScriptTarget.ES5,
+        module: ts.ModuleKind.CommonJS
+    });
+
+    if(!isVarStatement){
+        return undefined;
+    }
+
     const outputFileContents:FileContents = getDocEntrys([fileNameRequiredOutput], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
@@ -170,7 +194,15 @@ export function main(fileNameRequiredInput:string, fileNameRequiredOutput:string
 
     const codeSolutions:string[] = findSolution(outputFileContents.variableStatements[0], possibleMethodsAndVariables, variableTypeMap, possibleMethodsAndVariables["mapInstanceNameToObject"]);
 
-    return codeSolutions;
+    const codeSolutionsMap = {};
+    codeSolutions.forEach(function(codeSolution){
+        codeSolutionsMap[codeSolution] = true;
+    });
+
+    const uniqueListOfCodeSolutions = Object.keys(codeSolutionsMap);
+
+    return uniqueListOfCodeSolutions;
+    //return codeSolutions;
     //return varToSolutionsMap;
 }
 
@@ -367,19 +399,21 @@ function findSolutionWithGivenMethodOrFunction(outputVar:DocEntry, funcDocEntry:
 function recursiveCheckParamCombos(funcName:string, className:string, outputVarValue, paramOptions:({name:string, val:any})[][], paramsChosenSoFar:({name:string, val:any})[], mapInstanceNameToObject, paramsOptional:boolean[]):({name:string, val:any})[][]{
     let validArgSets:({name:string, val:any})[][] = [];
 
-    // If this param is optional, also compute the value at this point and with the args up till this point.
-    if(paramsOptional[paramsChosenSoFar.length]){
-        const paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
-        const val:{argNamesList:string[], computedValue:any} = computeValue(funcName, className, paramsChosenSoFarClone, mapInstanceNameToObject);
-        if(_.isEqual(val.computedValue, outputVarValue)){
-            validArgSets.push(paramsChosenSoFarClone);
-        }
-    }
-
     // If last param to be chosen
     if(paramsChosenSoFar.length === paramOptions.length-1){
         // For the last index in paramOptions, for each param option
         const optionsForThisParam = paramOptions[paramsChosenSoFar.length];
+        
+        // If this param is optional, also compute the value at this point and with the args up till this point.
+        if(paramsOptional[paramsChosenSoFar.length]){
+            const paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
+            const val:{argNamesList:string[], computedValue:any} = computeValue(funcName, className, paramsChosenSoFarClone, mapInstanceNameToObject);
+            if(_.isEqual(val.computedValue, outputVarValue)){
+                validArgSets.push(paramsChosenSoFarClone);
+            }
+        }
+        
+        
         for(let i = 0; i < optionsForThisParam.length; i++){
             const thisParamOption = optionsForThisParam[i];
             const paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
@@ -394,6 +428,15 @@ function recursiveCheckParamCombos(funcName:string, className:string, outputVarV
         // If matches, return string representation
     }else{ // If not last param to be chosen
         const optionsForThisParam = paramOptions[paramsChosenSoFar.length];
+        
+        if(paramsOptional[paramsChosenSoFar.length]){
+            const paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
+            const val:{argNamesList:string[], computedValue:any} = computeValue(funcName, className, paramsChosenSoFarClone, mapInstanceNameToObject);
+            if(_.isEqual(val.computedValue, outputVarValue)){
+                validArgSets.push(paramsChosenSoFarClone);
+            }
+        }
+        
         for(let i = 0; i < optionsForThisParam.length; i++){
             const thisParamOption = optionsForThisParam[i];
             const paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);

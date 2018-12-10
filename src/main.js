@@ -7,18 +7,32 @@ var _ = require("lodash");
 var fs = require("fs");
 //const nonStrictEval = require('./nonStrictEval');
 var javascript_declaration_file = "./lib.d.ts";
-var transpiledInputFileContentsString;
-//export function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str:string]:string[]} {
-function main(fileNameRequiredInput, fileNameRequiredOutput) {
-    // Get string of the code in the input file
-    var inputFileContentsString = fs.readFileSync(fileNameRequiredInput, "utf8");
-    transpiledInputFileContentsString = ts.transpileModule(inputFileContentsString, {
+function transpileCode(tsCodeString) {
+    var transpiledCode = ts.transpileModule(tsCodeString, {
         compilerOptions: {
             target: ts.ScriptTarget.ES5,
             module: ts.ModuleKind.CommonJS,
             noImplicitUseStrict: true
         }
     }).outputText;
+    return transpiledCode;
+}
+exports.transpileCode = transpileCode;
+var transpiledInputFileContentsString;
+//export function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str:string]:string[]} {
+function main(fileNameRequiredInput, fileNameRequiredOutput) {
+    // Get string of the code in the input file
+    var inputFileContentsString = fs.readFileSync(fileNameRequiredInput, "utf8");
+    /*transpiledInputFileContentsString = ts.transpileModule(inputFileContentsString,
+        {
+            compilerOptions: {
+                target: ts.ScriptTarget.ES5,
+                module: ts.ModuleKind.CommonJS,
+                noImplicitUseStrict: true
+            },
+        }
+    ).outputText;*/
+    transpiledInputFileContentsString = transpileCode(inputFileContentsString);
     //console.log("fileContent");
     //console.log(fileContent);
     // Process required input; save as DocEntry[]
@@ -30,6 +44,13 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     //console.log("inputFileContents");
     //console.log(inputFileContents);
     // Process required output; save as DocEntry[]
+    var isVarStatement = getTypeInfo_1.isVariableStatement([fileNameRequiredOutput], {
+        target: ts.ScriptTarget.ES5,
+        module: ts.ModuleKind.CommonJS
+    });
+    if (!isVarStatement) {
+        return undefined;
+    }
     var outputFileContents = getTypeInfo_1.getDocEntrys([fileNameRequiredOutput], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
@@ -143,7 +164,13 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     console.log("varToSolutionsMap");
     console.log(varToSolutionsMap);*/
     var codeSolutions = findSolution(outputFileContents.variableStatements[0], possibleMethodsAndVariables, variableTypeMap, possibleMethodsAndVariables["mapInstanceNameToObject"]);
-    return codeSolutions;
+    var codeSolutionsMap = {};
+    codeSolutions.forEach(function (codeSolution) {
+        codeSolutionsMap[codeSolution] = true;
+    });
+    var uniqueListOfCodeSolutions = Object.keys(codeSolutionsMap);
+    return uniqueListOfCodeSolutions;
+    //return codeSolutions;
     //return varToSolutionsMap;
 }
 exports.main = main;
@@ -310,18 +337,18 @@ function findSolutionWithGivenMethodOrFunction(outputVar, funcDocEntry, variable
 }
 function recursiveCheckParamCombos(funcName, className, outputVarValue, paramOptions, paramsChosenSoFar, mapInstanceNameToObject, paramsOptional) {
     var validArgSets = [];
-    // If this param is optional, also compute the value at this point and with the args up till this point.
-    if (paramsOptional[paramsChosenSoFar.length]) {
-        var paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
-        var val = computeValue(funcName, className, paramsChosenSoFarClone, mapInstanceNameToObject);
-        if (_.isEqual(val.computedValue, outputVarValue)) {
-            validArgSets.push(paramsChosenSoFarClone);
-        }
-    }
     // If last param to be chosen
     if (paramsChosenSoFar.length === paramOptions.length - 1) {
         // For the last index in paramOptions, for each param option
         var optionsForThisParam = paramOptions[paramsChosenSoFar.length];
+        // If this param is optional, also compute the value at this point and with the args up till this point.
+        if (paramsOptional[paramsChosenSoFar.length]) {
+            var paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
+            var val = computeValue(funcName, className, paramsChosenSoFarClone, mapInstanceNameToObject);
+            if (_.isEqual(val.computedValue, outputVarValue)) {
+                validArgSets.push(paramsChosenSoFarClone);
+            }
+        }
         for (var i = 0; i < optionsForThisParam.length; i++) {
             var thisParamOption = optionsForThisParam[i];
             var paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
@@ -337,6 +364,13 @@ function recursiveCheckParamCombos(funcName, className, outputVarValue, paramOpt
     }
     else { // If not last param to be chosen
         var optionsForThisParam = paramOptions[paramsChosenSoFar.length];
+        if (paramsOptional[paramsChosenSoFar.length]) {
+            var paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
+            var val = computeValue(funcName, className, paramsChosenSoFarClone, mapInstanceNameToObject);
+            if (_.isEqual(val.computedValue, outputVarValue)) {
+                validArgSets.push(paramsChosenSoFarClone);
+            }
+        }
         for (var i = 0; i < optionsForThisParam.length; i++) {
             var thisParamOption = optionsForThisParam[i];
             var paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
