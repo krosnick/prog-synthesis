@@ -146,19 +146,6 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles, inputFileConten
         symbolDetails.signatureInfo = symType
             .getCallSignatures()
             .map(serializeSignature);
-        /*const memberMethodsProperties:{
-          methods: DocEntry[];
-          properties: DocEntry[];
-        } = processMethodsAndProperties(symbol.members);
-    
-        const staticMethodsProperties:{
-          methods: DocEntry[];
-          properties: DocEntry[];
-        } = processMethodsAndProperties(symbol.exports);*/
-        //console.log(symbol.declarations);
-        //console.log(symbol.valueDeclaration);
-        //console.log(symbol.valueDeclaration["symbol"]);
-        //console.log(symbol.valueDeclaration["initializer"]["expression"]);
         var codeLine = node.getText();
         //const codeLine = symbol.valueDeclaration.getText();
         //console.log(codeLine);
@@ -308,7 +295,7 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles, inputFileConten
         console.log(classType);
         const classInstance = new classType('test');
         console.log(classInstance);
-        
+    
         console.log(Object.keys(classInstance));*/
         /*if((typeof symbolDetails.value) === "object"){
           //console.log(Object.keys(symbolDetails.value));
@@ -487,6 +474,10 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles, inputFileConten
                             }
                             if (thisSymbol.declarations[0].kind === ts.SyntaxKind.PropertyDeclaration) {
                                 propertiesList.push(symbolDetails);
+                                // console.log("PROPERTY");
+                                // console.log();
+                                // console.log(thisSymbol.declarations[0]["initializer"].text)
+                                // console.log(symbolDetails);
                             }
                             else if (thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodDeclaration) {
                                 methodsList.push(symbolDetails);
@@ -770,3 +761,25 @@ function mapVariablesToTypes(variablesArray) {
     return variableTypeMap;
 }
 exports.mapVariablesToTypes = mapVariablesToTypes;
+function getParameterPermutations(variableTypeMap) {
+    // make local consolidatedVariables map that allows us to iterate over all variables,
+    // instanceProperties, and staticProperties in one loop
+    // consolidatedVariables Example:
+    //   {
+    //     number: [ { name: NAME, val: VALUE } ],
+    //     string: [ { name: NAME, val: VALUE } ]
+    //   }
+    var consolidatedVariables = {};
+    Object.keys(variableTypeMap.possibleVariables).forEach(function (key) {
+        variableTypeMap.possibleVariables[key].forEach(function (variable) {
+            var varEntry = {};
+            varEntry["name"] = variable.name;
+            varEntry["val"] = variable.val;
+            consolidatedVariables[key].push(varEntry);
+        });
+    });
+    // Iterate over consolidatedVariables to populate parameter permutations data structure,
+    // which can be a list of N-tuples, where N is the number of parameters
+    // Return parameter permutations data structure
+}
+exports.getParameterPermutations = getParameterPermutations;

@@ -12,8 +12,12 @@ export class C {
         this.strValue = a;
     }
 
+<<<<<<< HEAD
+    public pubValue:number = 1234321;
+=======
     public pubValue:number;
     public strValue:string;
+>>>>>>> bf5eff7e5af18cd1dc61a1b993617b021a883ad7
     private privValue:string;
     //public static forAll:number = 200;
     //public forAll:number = 200;

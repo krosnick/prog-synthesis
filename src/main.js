@@ -123,6 +123,7 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     console.log(possibleMethodsAndVariables["mapClassToInstanceProperties"]);
     console.log(possibleMethodsAndVariables["mapClassToStaticProperties"]);
     console.log(variableTypeMap);
+    console.log(variableTypeMap["possibleVariables"]);
     console.log(variableTypeMap["mapClassToInstanceTypes"]["C"]);
     console.log(variableTypeMap["mapClassToStaticTypes"]["C"]);*/
     //console.log(variableTypeMap);
@@ -567,7 +568,7 @@ function getParameterOptions(funcDocEntry, variableTypeMap) {
         paramOptions.push(singleParamOptions);
         //console.log(possibleVariables);
         // variableTypeMap["possibleVariables"]
-        //const possibleVariables = 
+        //const possibleVariables =
         // variableTypeMap["mapClassToInstanceTypes"]
         // variableTypeMap["mapClassToStaticTypes"]
     };
