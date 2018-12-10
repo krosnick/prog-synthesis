@@ -10,7 +10,7 @@ const javascript_declaration_file = "./lib.d.ts";
 
 let transpiledInputFileContentsString;
 function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str:string]:string[]} {
-
+    
     // Get string of the code in the input file
     let inputFileContentsString = fs.readFileSync(fileNameRequiredInput, "utf8");
     transpiledInputFileContentsString = ts.transpileModule(inputFileContentsString,
@@ -143,7 +143,6 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
     console.log(possibleMethodsAndVariables["mapClassToInstanceProperties"]);
     console.log(possibleMethodsAndVariables["mapClassToStaticProperties"]);
     console.log(variableTypeMap);
-    console.log(variableTypeMap["possibleVariables"]);
     console.log(variableTypeMap["mapClassToInstanceTypes"]["C"]);
     console.log(variableTypeMap["mapClassToStaticTypes"]["C"]);*/
     //console.log(variableTypeMap);
@@ -256,7 +255,7 @@ function findSolution(outputVar:DocEntry, possibleMethodsAndVariables, variableT
     synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithMethods(outputVar, mapClassToStaticMethods, variableTypeMap, mapInstanceNameToObject));
 
     return synthesizedCandidateSolutions;
-
+    
 }
 
 function findSolutionWithMethods(outputVar:DocEntry, mapClassToMethods, variableTypeMap, mapInstanceNameToObject){
@@ -654,7 +653,7 @@ function getParameterOptions(funcDocEntry:DocEntry, variableTypeMap):({name:stri
         //console.log(possibleVariables);
 
         // variableTypeMap["possibleVariables"]
-        //const possibleVariables =
+        //const possibleVariables = 
 
         // variableTypeMap["mapClassToInstanceTypes"]
 
@@ -665,7 +664,7 @@ function getParameterOptions(funcDocEntry:DocEntry, variableTypeMap):({name:stri
     //console.log(paramOptions);
 
     // really only need to look at the args used for funcDocEntry
-
+    
     // make local consolidatedVariables map that allows us to iterate over all variables,
     // instanceProperties, and staticProperties in one loop
     // consolidatedVariables Example:

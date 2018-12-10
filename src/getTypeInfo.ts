@@ -47,10 +47,10 @@ export function getDocEntrys(
   inputFileContentsString = inputFileContents;
   // Build a program using the set of root file names in fileNames
   let program = ts.createProgram(fileNames, options);
-
+  
   // Get the checker, we will use it to find more about classes
   let checker = program.getTypeChecker();
-
+  
   let fileContents:FileContents = {
     classDeclarations: [],
     interfaceDeclarations: {},
@@ -165,7 +165,8 @@ export function getDocEntrys(
 
   function serializeVariable(symbol: ts.Symbol, node: ts.Node){
     let symbolDetails = serializeSymbol(symbol);
-    /*if(symbol.valueDeclaration["initializer"]["text"]){ // probably a primitive, has "text" property
+    
+    /*if(symbol.valueDeclaration["initializer"]["text"]){ // probably a primitive, has "text" property 
       symbolDetails.value = symbol.valueDeclaration["initializer"]["text"]; // works for primitives
       //console.log(symbolDetails.value);
     }else if(symbol.valueDeclaration["initializer"]["symbol"]){
@@ -193,20 +194,35 @@ export function getDocEntrys(
       .getCallSignatures()
       .map(serializeSignature);
 
+    /*const memberMethodsProperties:{
+      methods: DocEntry[];
+      properties: DocEntry[];
+    } = processMethodsAndProperties(symbol.members);
+
+    const staticMethodsProperties:{
+      methods: DocEntry[];
+      properties: DocEntry[];
+    } = processMethodsAndProperties(symbol.exports);*/
+    //console.log(symbol.declarations);
+    //console.log(symbol.valueDeclaration);
+    //console.log(symbol.valueDeclaration["symbol"]);
+    //console.log(symbol.valueDeclaration["initializer"]["expression"]);
+    
+      
     const codeLine:string = node.getText();
     //const codeLine = symbol.valueDeclaration.getText();
     //console.log(codeLine);
     const indexOfEqualSign:number = codeLine.indexOf("=") + 1;
     const indexOfSemicolon:number = codeLine.indexOf(";");
     const valueString:string = codeLine.substring(indexOfEqualSign, indexOfSemicolon).trim();
-
+    
     /*let funcObject;
     try {
         funcObject = nonStrictEval(funcName); // native JS/TS function?
     }catch(error){
         funcObject = nonStrictEval(exampleInput[funcName]); // function defined in input file
     }*/
-
+    
     /*if(valueString === 'new C("hello")'){
       //console.log(ts.SyntaxKind[symbol.declarations[0].kind]);
       console.log(node);
@@ -350,7 +366,7 @@ export function getDocEntrys(
     console.log(classType);
     const classInstance = new classType('test');
     console.log(classInstance);
-
+    
     console.log(Object.keys(classInstance));*/
 
     /*if((typeof symbolDetails.value) === "object"){
@@ -577,10 +593,6 @@ export function getDocEntrys(
 
               if(thisSymbol.declarations[0].kind === ts.SyntaxKind.PropertyDeclaration){
                 propertiesList.push(symbolDetails);
-                // console.log("PROPERTY");
-                // console.log();
-                // console.log(thisSymbol.declarations[0]["initializer"].text)
-                // console.log(symbolDetails);
               }else if(thisSymbol.declarations[0].kind === ts.SyntaxKind.MethodDeclaration){
                 methodsList.push(symbolDetails);
               }
@@ -812,7 +824,7 @@ export function getPossibleMethodsAndVariables(inputFileContents: FileContents,
   inputFileContents.classDeclarations.forEach((classDeclaration) => {
     const objectInstantiation = classObjectInstantiated(classDeclaration, inputFileContents);
     //if (classObjectInstantiated(classDeclaration, inputFileContents)) {
-
+    
     /*if(objectInstantiation !== undefined){
       //console.log("classDeclaration.value");
       //console.log(classDeclaration.value);
@@ -825,9 +837,9 @@ export function getPossibleMethodsAndVariables(inputFileContents: FileContents,
     */
 
     if(objectInstantiation && objectInstantiation.value){
-
+      
       // If it does have a value, use that for determining values of instance + static properties
-
+      
       // For both classDeclaration.properties.instanceProperties and classDeclaration.properties.staticProperties
         // Try accessing the property name in objectInstantiation.value to get the value
       const objectValue = objectInstantiation.value;
@@ -835,15 +847,15 @@ export function getPossibleMethodsAndVariables(inputFileContents: FileContents,
       //console.log(objectValue);
       setObjectPropertyValues(classDeclaration.properties.instanceProperties, objectValue);
       setObjectPropertyValues(classDeclaration.properties.staticProperties, objectValue);
-
+            
       const objectName = objectInstantiation.name;
       // Instance properties only accessible when the class object is instantiated (as it is here)
       possibleVariables = possibleVariables.concat(classDeclaration.properties.instanceProperties);
       //possibleMethodsAndVariables["mapClassToInstanceProperties"][classDeclaration.name] = classDeclaration.properties.instanceProperties;
       possibleMethodsAndVariables["mapClassToInstanceProperties"][objectName] = classDeclaration.properties.instanceProperties;
-
+    
       possibleMethodsAndVariables["mapInstanceNameToObject"][objectName] = objectValue;
-    }
+    } 
 
     // Do regardless (if there are static properties, they should always be accessible)
     possibleVariables = possibleVariables.concat(classDeclaration.properties.staticProperties);
@@ -903,26 +915,4 @@ export function mapVariablesToTypes(variablesArray) {
     }
   });
   return variableTypeMap;
-}
-
-export function getParameterPermutations(variableTypeMap) {
-  // make local consolidatedVariables map that allows us to iterate over all variables,
-  // instanceProperties, and staticProperties in one loop
-  // consolidatedVariables Example:
-  //   {
-  //     number: [ { name: NAME, val: VALUE } ],
-  //     string: [ { name: NAME, val: VALUE } ]
-  //   }
-  let consolidatedVariables = {};
-  Object.keys(variableTypeMap.possibleVariables).forEach((key) => {
-    variableTypeMap.possibleVariables[key].forEach((variable) => {
-      let varEntry = {};
-      varEntry["name"] = variable.name;
-      varEntry["val"] = variable.val;
-      consolidatedVariables[key].push(varEntry);
-    });
-  });
-  // Iterate over consolidatedVariables to populate parameter permutations data structure,
-  // which can be a list of N-tuples, where N is the number of parameters
-  // Return parameter permutations data structure
 }
