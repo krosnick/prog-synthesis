@@ -3,7 +3,10 @@ import * as ts from "typescript";
 import {nonStrictEval} from "./nonStrictEval";
 import * as _ from "lodash";
 import * as fs from "fs";
+import { type } from "os";
 //const nonStrictEval = require('./nonStrictEval');
+
+const javascript_declaration_file = "./lib.d.ts";
 
 let transpiledInputFileContentsString;
 function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str:string]:string[]} {
@@ -26,8 +29,8 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
     const inputFileContents:FileContents = getDocEntrys([fileNameRequiredInput], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
-    //}, true);
     }, false, transpiledInputFileContentsString);
+    //}, true, transpiledInputFileContentsString);
     //console.log("inputFileContents");
     //console.log(inputFileContents);
 
@@ -39,15 +42,24 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
     // console.log("outputFileContents");
     // console.log(outputFileContents);
 
-    // Process native JS/TS (from lib.d.ts)
-    /*const tsNativeContents:FileContents = getDocEntrys(["./lib.d.ts"], {
+    const ecmaScriptFileContents:FileContents = getDocEntrys([javascript_declaration_file], {
         target: ts.ScriptTarget.ES5,
         module: ts.ModuleKind.CommonJS
-    }, true);*/
+    }, true, inputFileContentsString);
 
-    // getPossibleFunctions(inputFileContents.variableStatements,
-    //                      inputFileContents.functionDeclarations,
-    //                      outputFileContents.variableStatements);
+    const jsAndWebAPIInterfaceDeclarations = ecmaScriptFileContents["interfaceDeclarations"];
+    const jsAndWebAPIFunctionDeclarations = ecmaScriptFileContents["functionDeclarations"];
+    const jsAndWebAPIVariableStatements = ecmaScriptFileContents["variableStatements"];
+
+    // Now, need to do 2 things
+        // 1. Process jsAndWebAPIVariableStatements, using jsAndWebAPIInterfaceDeclarations,
+            // adding more properties and methods to the variable statements
+        // 2. Potentially(?) process inputFileContents using jsAndWebAPIVariableStatements (or other)
+            // adding more properties and methods to the variable statements
+
+    // Process jsAndWebAPIVariableStatements, using jsAndWebAPIInterfaceDeclarations,
+        // adding more properties and methods to the variable statements
+    addInheritedMethodsPropertiesToNativeJSVariables(jsAndWebAPIVariableStatements, jsAndWebAPIInterfaceDeclarations);
 
     ///////////////////////// Print final output for debugging /////////////////////////
     /* variableTypeMap Example, if an instance of C has been instantiated:
@@ -74,6 +86,39 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
     */
 
     let possibleMethodsAndVariables = getPossibleMethodsAndVariables(inputFileContents, outputFileContents);
+
+    // Add jsAndWebAPIVariableStatements, jsAndWebAPIFunctionDeclarations to appropriate attributes of possibleMethodsAndVariables
+    //console.log(jsAndWebAPIFunctionDeclarations);
+    possibleMethodsAndVariables["possibleFunctions"] = possibleMethodsAndVariables["possibleFunctions"].concat(jsAndWebAPIFunctionDeclarations);
+    possibleMethodsAndVariables["possibleVariables"] = possibleMethodsAndVariables["possibleVariables"].concat(jsAndWebAPIVariableStatements);
+    /*console.log('possibleMethodsAndVariables["mapClassToInstanceProperties"]');
+    console.log(possibleMethodsAndVariables["mapClassToInstanceProperties"]);
+    console.log('jsAndWebAPIVariableStatements');
+    console.log(jsAndWebAPIVariableStatements);*/
+
+    /*console.log('possibleMethodsAndVariables["mapClassToInstanceMethods"]');
+    console.log(possibleMethodsAndVariables["mapClassToInstanceMethods"]);
+    console.log('jsAndWebAPIVariableStatements');
+    console.log(jsAndWebAPIVariableStatements);*/
+
+
+
+    for(let i = 0; i < jsAndWebAPIVariableStatements.length; i++){
+        const varStatementObject:DocEntry = jsAndWebAPIVariableStatements[i];
+        const varStatementObjectName = varStatementObject.name;
+        //if(varStatementObjectName === "Object" || varStatementObjectName === "Math" || varStatementObjectName === "String" || varStatementObjectName === "Date"){
+        if(varStatementObjectName === "Object" || varStatementObjectName === "Math"){
+            if(varStatementObject.properties && varStatementObject.properties.instanceProperties.length > 0){
+                // There are properties for this object
+                // Add to possibleMethodsAndVariables["mapClassToInstanceProperties"]
+                possibleMethodsAndVariables["mapClassToInstanceProperties"][varStatementObjectName] = varStatementObject.properties.instanceProperties;
+            }
+            if(varStatementObject.methods && varStatementObject.methods.instanceMethods.length > 0){
+                possibleMethodsAndVariables["mapClassToInstanceMethods"][varStatementObjectName] = varStatementObject.methods.instanceMethods;
+            }
+        }
+    }
+
     let variableTypeMap = {};
     variableTypeMap["possibleVariables"] = mapVariablesToTypes(possibleMethodsAndVariables["possibleVariables"]);
     variableTypeMap["mapClassToInstanceTypes"] = {};
@@ -87,8 +132,10 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
         variableTypeMap["mapClassToStaticTypes"][key] = mapVariablesToTypes(possibleMethodsAndVariables["mapClassToStaticProperties"][key]);
     });
 
-    //console.log("possibleMethodsAndVariables");
     //console.log(possibleMethodsAndVariables);
+
+    //console.log(possibleMethodsAndVariables["mapClassToInstanceProperties"]);
+    //console.log(possibleMethodsAndVariables["mapClassToInstanceMethods"]);
     /*console.log(possibleMethodsAndVariables["possibleFunctions"]);
     console.log(possibleMethodsAndVariables["mapClassToInstanceMethods"]);
     console.log(possibleMethodsAndVariables["mapClassToStaticMethods"]);
@@ -96,7 +143,6 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
     console.log(possibleMethodsAndVariables["mapClassToInstanceProperties"]);
     console.log(possibleMethodsAndVariables["mapClassToStaticProperties"]);
     console.log(variableTypeMap);
-    console.log(variableTypeMap["possibleVariables"]);
     console.log(variableTypeMap["mapClassToInstanceTypes"]["C"]);
     console.log(variableTypeMap["mapClassToStaticTypes"]["C"]);*/
     //console.log(variableTypeMap);
@@ -121,6 +167,7 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
         varToSolutionsMap[outputVar.name] = findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap);
     });*/
 
+    //console.log("beforeFindSolution");
     // for now, assume only 1 output var spec
     varToSolutionsMap[outputFileContents.variableStatements[0].name] = findSolution(outputFileContents.variableStatements[0], possibleMethodsAndVariables, variableTypeMap, possibleMethodsAndVariables["mapInstanceNameToObject"]);
     console.log("varToSolutionsMap");
@@ -129,17 +176,81 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
     return varToSolutionsMap;
 }
 
+function addInheritedMethodsPropertiesToNativeJSVariables(jsAndWebAPIVariableStatements, jsAndWebAPIInterfaceDeclarations){
+    jsAndWebAPIVariableStatements.forEach(function(variableStatement:DocEntry){
+        const variableType = variableStatement.type;
+
+        // Find variableType in jsAndWebAPIInterfaceDeclarations,
+        // and add the methods and properties to this jsAndWebAPIVariableStatement DocEntry
+
+        const typeInterfaceObject:DocEntry = jsAndWebAPIInterfaceDeclarations[variableType];
+        if(typeInterfaceObject){
+            addMethodsPropertiesOfInterfaceType(variableStatement, typeInterfaceObject);
+        }
+
+        const ownNameInterfaceObject:DocEntry = jsAndWebAPIInterfaceDeclarations[variableStatement.name];
+        if(ownNameInterfaceObject){
+            addMethodsPropertiesOfInterfaceType(variableStatement, ownNameInterfaceObject)
+        }
+    });
+}
+
+function addMethodsPropertiesOfInterfaceType(variableStatementDocEntry:DocEntry, interfaceDocEntry:DocEntry){
+
+    //console.log(interfaceObject);
+
+    /*if(variableStatementDocEntry.name === "Number"){
+        //console.log(variableStatementDocEntry);
+    }*/
+
+    // Note: we don't distinguish between instance/static for interfaces, they're both set to the same list of methods or properties
+
+    if(variableStatementDocEntry.methods){
+        if(!variableStatementDocEntry.methods.instanceMethods){
+            variableStatementDocEntry.methods.instanceMethods = [];
+        }
+        variableStatementDocEntry.methods.instanceMethods = variableStatementDocEntry.methods.instanceMethods.concat(interfaceDocEntry.methods.instanceMethods);
+    }else{
+        variableStatementDocEntry.methods = {"instanceMethods": []};
+        variableStatementDocEntry.methods.instanceMethods = interfaceDocEntry.methods.instanceMethods;
+    }
+
+    if(variableStatementDocEntry.properties){
+        if(!variableStatementDocEntry.properties.instanceProperties){
+            variableStatementDocEntry.properties.instanceProperties = [];
+        }
+        variableStatementDocEntry.properties.instanceProperties = variableStatementDocEntry.properties.instanceProperties.concat(interfaceDocEntry.properties.instanceProperties);
+    }else{
+        variableStatementDocEntry.properties = {"instanceProperties": []};
+        variableStatementDocEntry.properties.instanceProperties = interfaceDocEntry.properties.instanceProperties;
+    }
+
+
+    /*if(variableStatementDocEntry.name === "Number"){
+        //console.log(variableStatementDocEntry);
+        console.log(variableStatementDocEntry.methods.instanceMethods);
+    }*/
+}
+
 function findSolution(outputVar:DocEntry, possibleMethodsAndVariables, variableTypeMap, mapInstanceNameToObject):string[]{
     let synthesizedCandidateSolutions:string[] = [];
 
+    //console.log("before searching possibleFunctions");
     const possibleFunctions = possibleMethodsAndVariables["possibleFunctions"];
     for(let i = 0; i < possibleFunctions.length; i++){
         const funcObject = possibleFunctions[i];
-        synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenMethodOrFunction(outputVar, funcObject, variableTypeMap, "", mapInstanceNameToObject));
+        const aSolution = findSolutionWithGivenMethodOrFunction(outputVar, funcObject, variableTypeMap, "", mapInstanceNameToObject);
+        //console.log(aSolution);
+        if(aSolution){
+            synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(aSolution);
+        }
     }
 
+    //console.log("before searching mapClassToInstanceMethods");
     const mapClassToInstanceMethods = possibleMethodsAndVariables["mapClassToInstanceMethods"];
     synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithMethods(outputVar, mapClassToInstanceMethods, variableTypeMap, mapInstanceNameToObject));
+    //console.log("after searching mapClassToInstanceMethods");
+
     const mapClassToStaticMethods = possibleMethodsAndVariables["mapClassToStaticMethods"];
     synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithMethods(outputVar, mapClassToStaticMethods, variableTypeMap, mapInstanceNameToObject));
 
@@ -156,7 +267,14 @@ function findSolutionWithMethods(outputVar:DocEntry, mapClassToMethods, variable
         const classOrInstanceMethods:DocEntry[] = mapClassToMethods[classOrInstanceName];
         for(let j = 0; j < classOrInstanceMethods.length; j++){
             const staticMethodObject = classOrInstanceMethods[j];
-            synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(findSolutionWithGivenMethodOrFunction(outputVar, staticMethodObject, variableTypeMap, classOrInstanceName, mapInstanceNameToObject));
+            const aSolution = findSolutionWithGivenMethodOrFunction(outputVar, staticMethodObject, variableTypeMap, classOrInstanceName, mapInstanceNameToObject);
+            /*if(staticMethodObject.name === "keys" && classOrInstanceName === "Object"){
+                console.log("Object.keys");
+                console.log("aSolution: " + aSolution);
+            }*/
+            if(aSolution){
+                synthesizedCandidateSolutions = synthesizedCandidateSolutions.concat(aSolution);
+            }
         }
     }
 
@@ -165,7 +283,44 @@ function findSolutionWithMethods(outputVar:DocEntry, mapClassToMethods, variable
 
 function findSolutionWithGivenMethodOrFunction(outputVar:DocEntry, funcDocEntry:DocEntry, variableTypeMap, classOrInstanceName:string, mapInstanceNameToObject):string[]{
 
+
+    /*if(funcDocEntry.name ===  "parseInt"){
+        console.log("parseInt");
+        console.log(funcDocEntry);
+        console.log(funcDocEntry.signatureInfo[0].parameters);
+    }*/
+
     const parameterOptions:({name:string, val:any})[][] = getParameterOptions(funcDocEntry, variableTypeMap);
+
+    const paramsOptional:boolean[] = [];
+    const params = funcDocEntry.signatureInfo[0].parameters;
+    for(let i = 0; i < params.length; i++){
+        let param = params[i];
+        paramsOptional.push(param.optional);
+    }
+    /*if(funcDocEntry.name === "parseInt"){
+        console.log(paramsOptional);
+    }*/
+
+    /*if(funcDocEntry.name === "keys" && classOrInstanceName === "Object"){
+        console.log("Object.keys");
+        console.log(funcDocEntry);
+        console.log(parameterOptions);
+    }*/
+
+    let someParamNotSatisfiable:boolean = false;
+    parameterOptions.forEach(function(optionsForParamIndexI){
+        if(optionsForParamIndexI.length === 0){
+            someParamNotSatisfiable = true;
+        }
+    });
+
+    if(someParamNotSatisfiable){
+        return undefined;
+    }
+    /*console.log(funcDocEntry);
+    console.log(parameterOptions);*/
+
     let methodOrFunctionNameWithScope;
     if(classOrInstanceName.length > 0){ // if static or instance method of a class
         methodOrFunctionNameWithScope = classOrInstanceName + "." + funcDocEntry.name;
@@ -173,20 +328,56 @@ function findSolutionWithGivenMethodOrFunction(outputVar:DocEntry, funcDocEntry:
         methodOrFunctionNameWithScope = funcDocEntry.name;
     }
 
-    const validArgSets:({name:string, val:any})[][] = recursiveCheckParamCombos(funcDocEntry.name, classOrInstanceName, outputVar.value, parameterOptions, [], mapInstanceNameToObject);
-    const synthesizedCandidateSolutions:string[] = [];
-
-    for(let i = 0; i < validArgSets.length; i++){
-        const validArgs:({name:string, val:any})[] = validArgSets[i];
-        const solutionString = composeSolutionString(methodOrFunctionNameWithScope, validArgs);
-        synthesizedCandidateSolutions.push(solutionString);
+    if(funcDocEntry.name === "addTwoNumbers"){
+        //console.log("funcDocEntry.name: " + funcDocEntry.name);
+        //console.log("classOrInstanceName: " + classOrInstanceName);
+        //console.log(funcDocEntry.signatureInfo[0].parameters);
     }
-    return synthesizedCandidateSolutions;
+
+    if(funcDocEntry.signatureInfo[0].parameters.length === 0){
+        // Function takes no arguments
+        // Check and see if calling the function (with no args of course) results in correct value
+
+        const val:{argNamesList:string[], computedValue:any} = computeValue(funcDocEntry.name, classOrInstanceName, [], mapInstanceNameToObject);
+        if(_.isEqual(val.computedValue, outputVar.value)){
+            // compose solution string and return result
+            const solutionString = composeSolutionString(methodOrFunctionNameWithScope, []);
+            return [solutionString];
+        }else{
+            return [];
+        }
+    }else{
+        const validArgSets:({name:string, val:any})[][] = recursiveCheckParamCombos(funcDocEntry.name, classOrInstanceName, outputVar.value, parameterOptions, [], mapInstanceNameToObject, paramsOptional);
+        /*console.log("funcDocEntry.name: " + funcDocEntry.name);
+        console.log("classOrInstanceName: " + classOrInstanceName);*/
+        //console.log(validArgSets);
+        //if(validArgSets){
+        const synthesizedCandidateSolutions:string[] = [];
+
+        for(let i = 0; i < validArgSets.length; i++){
+            const validArgs:({name:string, val:any})[] = validArgSets[i];
+            const solutionString = composeSolutionString(methodOrFunctionNameWithScope, validArgs);
+            synthesizedCandidateSolutions.push(solutionString);
+        }
+        return synthesizedCandidateSolutions;
+    }
+    //}else{
+    //    return undefined;
+    //}
 }
 
-function recursiveCheckParamCombos(funcName:string, className:string, outputVarValue, paramOptions:({name:string, val:any})[][], paramsChosenSoFar:({name:string, val:any})[], mapInstanceNameToObject):({name:string, val:any})[][]{
-
+function recursiveCheckParamCombos(funcName:string, className:string, outputVarValue, paramOptions:({name:string, val:any})[][], paramsChosenSoFar:({name:string, val:any})[], mapInstanceNameToObject, paramsOptional:boolean[]):({name:string, val:any})[][]{
     let validArgSets:({name:string, val:any})[][] = [];
+
+    // If this param is optional, also compute the value at this point and with the args up till this point.
+    if(paramsOptional[paramsChosenSoFar.length]){
+        const paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
+        const val:{argNamesList:string[], computedValue:any} = computeValue(funcName, className, paramsChosenSoFarClone, mapInstanceNameToObject);
+        if(_.isEqual(val.computedValue, outputVarValue)){
+            validArgSets.push(paramsChosenSoFarClone);
+        }
+    }
+
     // If last param to be chosen
     if(paramsChosenSoFar.length === paramOptions.length-1){
         // For the last index in paramOptions, for each param option
@@ -197,17 +388,6 @@ function recursiveCheckParamCombos(funcName:string, className:string, outputVarV
             paramsChosenSoFarClone.push(thisParamOption);
             // Compute function call on these params (given the prior params paramsChosenSoFar and thisParamOption)
             const val:{argNamesList:string[], computedValue:any} = computeValue(funcName, className, paramsChosenSoFarClone, mapInstanceNameToObject);
-
-            /*console.log("val.computedValue: " + val.computedValue);
-            console.log("typeof val.computedValue: " + (typeof val.computedValue));
-            console.log("outputVarValue: " + outputVarValue);
-            console.log("tyepof outputVarValue: " + (typeof outputVarValue));*/
-            //if(val.computedValue === outputVarValue){
-            /*if(_.isEqual(val.computedValue, outputVarValue)){
-                console.log("equalToOutputVar");
-            }else{
-                console.log("notOutputVar");
-            }*/
             if(_.isEqual(val.computedValue, outputVarValue)){
                 validArgSets.push(paramsChosenSoFarClone);
             }
@@ -220,7 +400,10 @@ function recursiveCheckParamCombos(funcName:string, className:string, outputVarV
             const thisParamOption = optionsForThisParam[i];
             const paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
             paramsChosenSoFarClone.push(thisParamOption);
-            validArgSets = validArgSets.concat(recursiveCheckParamCombos(funcName, className, outputVarValue, paramOptions, paramsChosenSoFarClone, mapInstanceNameToObject));
+            const recursiveCheckParamCombosResult = recursiveCheckParamCombos(funcName, className, outputVarValue, paramOptions, paramsChosenSoFarClone, mapInstanceNameToObject, paramsOptional);
+            if(recursiveCheckParamCombosResult){
+                validArgSets = validArgSets.concat(recursiveCheckParamCombosResult);
+            }
         }
     }
     return validArgSets;
@@ -290,12 +473,16 @@ function computeValue(funcName:string, className:string, params:({name:string, v
         //const classObject = exampleInput[className];
         if(classObject){ // if "className" is an actual class name
             //funcObject = nonStrictEval(exampleInput[className][funcName]);
-            funcObject = nonStrictEval(classObject[funcName]);
+            try{
+                funcObject = nonStrictEval(classObject[funcName]);
+            }catch{}
         }else{ // "className" is actually an class instance object; use mapInstanceNameToObject to get the instance object
             const instanceObject = mapInstanceNameToObject[className];
             //console.log("instanceObject");
             //console.log(instanceObject);
-            funcObject = nonStrictEval(instanceObject[funcName]);
+            try{
+                funcObject = nonStrictEval(instanceObject[funcName]);
+            }catch{}
         }
         // something else?
     }
@@ -305,7 +492,10 @@ function computeValue(funcName:string, className:string, params:({name:string, v
     //console.log("argValuesList");
     //console.log(argValuesList);
 
-    const value = funcObject.apply(this, argValuesList);
+    let value = undefined;
+    try{
+        value = funcObject.apply(this, argValuesList);
+    }catch{}
     //console.log("computedValue");
     //console.log(value);
 
@@ -359,58 +549,104 @@ function getParameterOptions(funcDocEntry:DocEntry, variableTypeMap):({name:stri
             // of ({name:string, val:any})[].
         const singleParamOptions:({name:string, val:any})[] = [];
 
+        /*if(funcDocEntry.name === "keys"){
+            console.log(paramType);
+            console.log(variableTypeMap["possibleVariables"]);
+        }*/
+
+        let possibleVariablesOfType = variableTypeMap["possibleVariables"][paramType];
+
+        if(paramType === "{}" || paramType === "object"){
+            if(!possibleVariablesOfType){
+                possibleVariablesOfType = [];
+            }
+            // Use any variable that is an object
+            // Go through variableTypeMap["possibleVariables"] to find any variable that is an object
+            const possibleVariableNames = Object.keys(variableTypeMap["possibleVariables"]);
+            //let objectVariables = [];
+            possibleVariableNames.forEach(function(varName){
+                const varType = variableTypeMap["possibleVariables"][varName][0].type;
+                //console.log(varType);
+                //console.log(eval(varType));
+                //console.log(typeof varType);
+
+                let actualType;
+                try{
+                    actualType = typeof eval(varType);
+                    if(actualType === "object"){
+                        possibleVariablesOfType.push(variableTypeMap["possibleVariables"][varName][0]);
+                    }
+                }catch{
+                    possibleVariablesOfType.push(variableTypeMap["possibleVariables"][varName][0]);
+                }
+                /*if(typeof varType === "object"){
+                    console.log(varName);
+                }*/
+            });
+            //console.log("objectVariables");
+            //console.log(possibleVariablesOfType);
+        }
+
+        //console.log(possibleVariablesOfType);
         // This would not work for paramType="any"
             // (in that case, maybe consider all variables in variableTypeMap)
-        const possibleVariablesOfType = variableTypeMap["possibleVariables"][paramType];
-        possibleVariablesOfType.forEach(function(variable){ // variable is DocEntry?
-            const variableName = variable.name;
-            const variableValue = variable.value;
-            singleParamOptions.push(
-                {
-                    name: variableName,
-                    val: variableValue
-                }
-            );
-        });
+        if(possibleVariablesOfType){
+            possibleVariablesOfType.forEach(function(variable){ // variable is DocEntry?
+                const variableName = variable.name;
+                const variableValue = variable.value;
+                singleParamOptions.push(
+                    {
+                        name: variableName,
+                        val: variableValue
+                    }
+                );
+            });
+        }
 
         const mapClassToInstanceTypes = variableTypeMap["mapClassToInstanceTypes"];
-        const classNamesForInstanceTypes:string[] = Object.keys(mapClassToInstanceTypes);
-        classNamesForInstanceTypes.forEach(function(className:string){
-            const possiblePropertiesOfType = mapClassToInstanceTypes[className][paramType];
-            if(possiblePropertiesOfType){
-                possiblePropertiesOfType.forEach(function(property){
-                    const propertyName = className + "." + property.name;
-                    const propertyValue = property.value;
-                    singleParamOptions.push(
-                        {
-                            name: propertyName,
-                            val: propertyValue
-                        }
-                    );
-                });
-            }
-        });
+        if(mapClassToInstanceTypes){
+            const classNamesForInstanceTypes:string[] = Object.keys(mapClassToInstanceTypes);
+            classNamesForInstanceTypes.forEach(function(className:string){
+                const possiblePropertiesOfType = mapClassToInstanceTypes[className][paramType];
+                if(possiblePropertiesOfType){
+                    possiblePropertiesOfType.forEach(function(property){
+                        const propertyName = className + "." + property.name;
+                        const propertyValue = property.value;
+                        singleParamOptions.push(
+                            {
+                                name: propertyName,
+                                val: propertyValue
+                            }
+                        );
+                    });
+                }
+            });
+        }
 
         const mapClassToStaticTypes = variableTypeMap["mapClassToStaticTypes"];
-        const classNamesForStaticTypes:string[] = Object.keys(mapClassToStaticTypes);
-        classNamesForStaticTypes.forEach(function(className:string){
-            const possiblePropertiesOfType = mapClassToStaticTypes[className][paramType];
-            if(possiblePropertiesOfType){
-                possiblePropertiesOfType.forEach(function(property){
-                    const propertyName = className + "." + property.name;
-                    const propertyValue = property.value;
-                    singleParamOptions.push(
-                        {
-                            name: propertyName,
-                            val: propertyValue
-                        }
-                    );
-                });
-            }
-        });
+        if(mapClassToStaticTypes){
+            const classNamesForStaticTypes:string[] = Object.keys(mapClassToStaticTypes);
+            classNamesForStaticTypes.forEach(function(className:string){
+                const possiblePropertiesOfType = mapClassToStaticTypes[className][paramType];
+                if(possiblePropertiesOfType){
+                    possiblePropertiesOfType.forEach(function(property){
+                        const propertyName = className + "." + property.name;
+                        const propertyValue = property.value;
+                        singleParamOptions.push(
+                            {
+                                name: propertyName,
+                                val: propertyValue
+                            }
+                        );
+                    });
+                }
+            });
+        }
 
-        //console.log("singleParamOptions");
-        //console.log(singleParamOptions);
+        /*if(paramType === "{}"){
+            console.log("singleParamOptions");
+            console.log(singleParamOptions);
+        }*/
 
         paramOptions.push(singleParamOptions);
 
