@@ -38,12 +38,13 @@ app.post('/user_input',function(req,res) {
 		"codeSolutions": codeSolutions
 	});
 });
-// app.get('/currentData',function(req,res){
-// 	res.json({
-// 		"views": Object.values(views),
-// 		/*"elementRules": elementRules,*/
-// 		"cssRules": cssRules
-// 	});
-// });
+
+app.post('/transpile_code', function(req, res){
+	// transpile
+	var transpiledCode = synthesize.transpileCode(req.body.fullCode);
+	res.json({
+		"transpiledCode": transpiledCode
+	});
+});
 
 app.listen(8080);

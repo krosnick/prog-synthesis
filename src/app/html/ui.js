@@ -21,7 +21,6 @@ $(document).ready(function() {
 
     $("#replaceButton").on("click", function(){
         var selectedOutput = $(".active").text();
-        console.log(selectedOutput);
         replaceCodeSolutionInEditor(selectedOutput);
 
         emptyResultsArea();
@@ -29,6 +28,16 @@ $(document).ready(function() {
 
     $("#closeButton").on("click", function(){
         emptyResultsArea();
+    });
+
+    $("#runButton").on("click", function(){
+        //var fullCode = eval(monaco.editor.getModels()[0].getValue().toString());
+        var fullCode = monaco.editor.getModels()[0].getValue().toString();
+        $.post('/transpile_code', {fullCode: fullCode}, function(results){
+            // eval js results
+            var transpiledCode = results.transpiledCode;
+            eval(transpiledCode);
+        });
     });
 });
 
@@ -107,7 +116,7 @@ function replaceCodeSolutionInEditor(codeSolution){
 }
 
 
-function runProgram() {
+/*function runProgram() {
     programOutput = eval(monaco.editor.getModels()[0].getValue().toString());
     
     // alert(programOutput);
@@ -123,4 +132,4 @@ function runProgram() {
     //     }
     // ).outputText;
     //document.getElementById("program").innerHTML = programOutput;
-}
+}*/
