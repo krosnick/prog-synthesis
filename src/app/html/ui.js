@@ -110,6 +110,15 @@ function replaceCodeSolutionInEditor(codeSolution){
     var codeBeforeSelection = fullInputCode.substring(0, indexOfSelectedCode);
     var codeAfterSelection = fullInputCode.substring(indexOfSelectedCode + selectedCode.length);
     
+    console.log("codeSolution");
+    console.log(codeSolution);
+
+    const indexOfWeirdMessageString = codeSolution.indexOf("message?: any");
+    const lengthOfWeirdMessageString = "message?: any".length;
+    if(indexOfWeirdMessageString > -1){
+        codeSolution = codeSolution.substring(indexOfWeirdMessageString + lengthOfWeirdMessageString);
+    }
+
     var newFullEditorCode = codeBeforeSelection + codeSolution + codeAfterSelection;
     //console.log(newFullEditorCode);
     monaco.editor.getModels()[0].setValue(newFullEditorCode);

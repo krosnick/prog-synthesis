@@ -1,1 +1,1 @@
-const outputNum:number = 5;
+const leg1Squared = 9;
