@@ -234,7 +234,21 @@ function findSolutionWithMethods(outputVar, mapClassToMethods, variableTypeMap, 
     return synthesizedCandidateSolutions;
 }
 function findSolutionWithGivenMethodOrFunction(outputVar, funcDocEntry, variableTypeMap, classOrInstanceName, mapInstanceNameToObject) {
+    /*if(funcDocEntry.name ===  "parseInt"){
+        console.log("parseInt");
+        console.log(funcDocEntry);
+        console.log(funcDocEntry.signatureInfo[0].parameters);
+    }*/
     var parameterOptions = getParameterOptions(funcDocEntry, variableTypeMap);
+    var paramsOptional = [];
+    var params = funcDocEntry.signatureInfo[0].parameters;
+    for (var i = 0; i < params.length; i++) {
+        var param = params[i];
+        paramsOptional.push(param.optional);
+    }
+    /*if(funcDocEntry.name === "parseInt"){
+        console.log(paramsOptional);
+    }*/
     /*if(funcDocEntry.name === "keys" && classOrInstanceName === "Object"){
         console.log("Object.keys");
         console.log(funcDocEntry);
@@ -277,7 +291,7 @@ function findSolutionWithGivenMethodOrFunction(outputVar, funcDocEntry, variable
         }
     }
     else {
-        var validArgSets = recursiveCheckParamCombos(funcDocEntry.name, classOrInstanceName, outputVar.value, parameterOptions, [], mapInstanceNameToObject);
+        var validArgSets = recursiveCheckParamCombos(funcDocEntry.name, classOrInstanceName, outputVar.value, parameterOptions, [], mapInstanceNameToObject, paramsOptional);
         /*console.log("funcDocEntry.name: " + funcDocEntry.name);
         console.log("classOrInstanceName: " + classOrInstanceName);*/
         //console.log(validArgSets);
@@ -294,10 +308,16 @@ function findSolutionWithGivenMethodOrFunction(outputVar, funcDocEntry, variable
     //    return undefined;
     //}
 }
-function recursiveCheckParamCombos(funcName, className, outputVarValue, paramOptions, paramsChosenSoFar, mapInstanceNameToObject) {
-    /*console.log("funcName: " + funcName);
-    console.log("className: " + className);*/
+function recursiveCheckParamCombos(funcName, className, outputVarValue, paramOptions, paramsChosenSoFar, mapInstanceNameToObject, paramsOptional) {
     var validArgSets = [];
+    // If this param is optional, also compute the value at this point and with the args up till this point.
+    if (paramsOptional[paramsChosenSoFar.length]) {
+        var paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
+        var val = computeValue(funcName, className, paramsChosenSoFarClone, mapInstanceNameToObject);
+        if (_.isEqual(val.computedValue, outputVarValue)) {
+            validArgSets.push(paramsChosenSoFarClone);
+        }
+    }
     // If last param to be chosen
     if (paramsChosenSoFar.length === paramOptions.length - 1) {
         // For the last index in paramOptions, for each param option
@@ -308,16 +328,6 @@ function recursiveCheckParamCombos(funcName, className, outputVarValue, paramOpt
             paramsChosenSoFarClone.push(thisParamOption);
             // Compute function call on these params (given the prior params paramsChosenSoFar and thisParamOption)
             var val = computeValue(funcName, className, paramsChosenSoFarClone, mapInstanceNameToObject);
-            /*console.log("val.computedValue: " + val.computedValue);
-            console.log("typeof val.computedValue: " + (typeof val.computedValue));
-            console.log("outputVarValue: " + outputVarValue);
-            console.log("tyepof outputVarValue: " + (typeof outputVarValue));*/
-            //if(val.computedValue === outputVarValue){
-            /*if(_.isEqual(val.computedValue, outputVarValue)){
-                console.log("equalToOutputVar");
-            }else{
-                console.log("notOutputVar");
-            }*/
             if (_.isEqual(val.computedValue, outputVarValue)) {
                 validArgSets.push(paramsChosenSoFarClone);
             }
@@ -327,23 +337,15 @@ function recursiveCheckParamCombos(funcName, className, outputVarValue, paramOpt
     }
     else { // If not last param to be chosen
         var optionsForThisParam = paramOptions[paramsChosenSoFar.length];
-        //console.log(optionsForThisParam);
-        //if(optionsForThisParam){
         for (var i = 0; i < optionsForThisParam.length; i++) {
             var thisParamOption = optionsForThisParam[i];
             var paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
             paramsChosenSoFarClone.push(thisParamOption);
-            var recursiveCheckParamCombosResult = recursiveCheckParamCombos(funcName, className, outputVarValue, paramOptions, paramsChosenSoFarClone, mapInstanceNameToObject);
+            var recursiveCheckParamCombosResult = recursiveCheckParamCombos(funcName, className, outputVarValue, paramOptions, paramsChosenSoFarClone, mapInstanceNameToObject, paramsOptional);
             if (recursiveCheckParamCombosResult) {
                 validArgSets = validArgSets.concat(recursiveCheckParamCombosResult);
-            } /*else{
-                //console.log(recursiveCheckParamCombosResult);
-                return undefined;
-            }*/
+            }
         }
-        //}/*else{
-        //return undefined;
-        //}*/
     }
     return validArgSets;
 }

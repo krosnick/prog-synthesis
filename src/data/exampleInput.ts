@@ -59,6 +59,7 @@ const myArr:number[] = [1,5,3,7];
 const myClass:C = new C("hello");
 const num2:number = 2;
 const num3:number = 3;
+const stringNumFive:string = "5";
 
 function addTwoNumbers(a:number, b:number) { return a + b; };
 function returnKeys(dict:{ [num:number]:string }, str:string) { return Object.keys(dict); };

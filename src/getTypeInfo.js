@@ -82,7 +82,16 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles, inputFileConten
         }
         else if (ts.isFunctionDeclaration(node)) {
             var symbol = checker.getSymbolAtLocation(node.name);
-            var list = serializeFunction(symbol);
+            /*if(symbol.getName() === "parseInt"){
+              //console.log("parseInt");
+              //console.log(node);
+              //console.log(node.modifiers);
+              //console.log(node.parameters[1].getChildren());
+              node.parameters.forEach(function(param){
+                console.log(checker.isOptionalParameter(param));
+              });
+            }*/
+            var list = serializeFunction(symbol, node);
             list.forEach(function (item) { fileContents.functionDeclarations.push(item); });
         }
         else if (ts.isInterfaceDeclaration(node)) {
@@ -309,7 +318,17 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles, inputFileConten
         // call serializeVariable on class's keys?
         return symbolDetails;
     }
-    function serializeFunction(symbol) {
+    function serializeFunction(symbol, node) {
+        var paramOptionalList = [];
+        if (ts.isFunctionDeclaration(node)) {
+            // Should always enter here
+            node.parameters.forEach(function (param) {
+                paramOptionalList.push(checker.isOptionalParameter(param));
+            });
+        }
+        /*if(symbol.name === "parseInt"){
+          console.log(paramOptionalList);
+        }*/
         var detailsList = [];
         var symbolDetails = serializeSymbol(symbol);
         var symType = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration);
@@ -317,8 +336,15 @@ function getDocEntrys(fileNames, options, checkDeclarationFiles, inputFileConten
             .getCallSignatures()
             .map(serializeSignature);
         if (sigInfo.length > 0) {
+            var params = sigInfo[0].parameters;
+            for (var i = 0; i < params.length; i++) {
+                params[i]["optional"] = paramOptionalList[i];
+            }
             symbolDetails.signatureInfo = sigInfo;
         }
+        /*if(symbol.name === "parseInt"){
+            console.log(symbolDetails.signatureInfo[0].parameters);
+        }*/
         detailsList.push(symbolDetails);
         //console.log(symbolDetails.name);
         return detailsList;

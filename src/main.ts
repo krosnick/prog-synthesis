@@ -283,8 +283,25 @@ function findSolutionWithMethods(outputVar:DocEntry, mapClassToMethods, variable
 
 function findSolutionWithGivenMethodOrFunction(outputVar:DocEntry, funcDocEntry:DocEntry, variableTypeMap, classOrInstanceName:string, mapInstanceNameToObject):string[]{
 
+
+    /*if(funcDocEntry.name ===  "parseInt"){
+        console.log("parseInt");
+        console.log(funcDocEntry);
+        console.log(funcDocEntry.signatureInfo[0].parameters);
+    }*/
+
     const parameterOptions:({name:string, val:any})[][] = getParameterOptions(funcDocEntry, variableTypeMap);
     
+    const paramsOptional:boolean[] = [];
+    const params = funcDocEntry.signatureInfo[0].parameters;
+    for(let i = 0; i < params.length; i++){
+        let param = params[i];
+        paramsOptional.push(param.optional);
+    }
+    /*if(funcDocEntry.name === "parseInt"){
+        console.log(paramsOptional);
+    }*/
+
     /*if(funcDocEntry.name === "keys" && classOrInstanceName === "Object"){
         console.log("Object.keys");
         console.log(funcDocEntry);
@@ -330,7 +347,7 @@ function findSolutionWithGivenMethodOrFunction(outputVar:DocEntry, funcDocEntry:
             return [];
         }
     }else{
-        const validArgSets:({name:string, val:any})[][] = recursiveCheckParamCombos(funcDocEntry.name, classOrInstanceName, outputVar.value, parameterOptions, [], mapInstanceNameToObject);
+        const validArgSets:({name:string, val:any})[][] = recursiveCheckParamCombos(funcDocEntry.name, classOrInstanceName, outputVar.value, parameterOptions, [], mapInstanceNameToObject, paramsOptional);
         /*console.log("funcDocEntry.name: " + funcDocEntry.name);
         console.log("classOrInstanceName: " + classOrInstanceName);*/
         //console.log(validArgSets);
@@ -349,10 +366,18 @@ function findSolutionWithGivenMethodOrFunction(outputVar:DocEntry, funcDocEntry:
     //}
 }
 
-function recursiveCheckParamCombos(funcName:string, className:string, outputVarValue, paramOptions:({name:string, val:any})[][], paramsChosenSoFar:({name:string, val:any})[], mapInstanceNameToObject):({name:string, val:any})[][]{
-    /*console.log("funcName: " + funcName);
-    console.log("className: " + className);*/
+function recursiveCheckParamCombos(funcName:string, className:string, outputVarValue, paramOptions:({name:string, val:any})[][], paramsChosenSoFar:({name:string, val:any})[], mapInstanceNameToObject, paramsOptional:boolean[]):({name:string, val:any})[][]{
     let validArgSets:({name:string, val:any})[][] = [];
+
+    // If this param is optional, also compute the value at this point and with the args up till this point.
+    if(paramsOptional[paramsChosenSoFar.length]){
+        const paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
+        const val:{argNamesList:string[], computedValue:any} = computeValue(funcName, className, paramsChosenSoFarClone, mapInstanceNameToObject);
+        if(_.isEqual(val.computedValue, outputVarValue)){
+            validArgSets.push(paramsChosenSoFarClone);
+        }
+    }
+
     // If last param to be chosen
     if(paramsChosenSoFar.length === paramOptions.length-1){
         // For the last index in paramOptions, for each param option
@@ -363,17 +388,6 @@ function recursiveCheckParamCombos(funcName:string, className:string, outputVarV
             paramsChosenSoFarClone.push(thisParamOption);
             // Compute function call on these params (given the prior params paramsChosenSoFar and thisParamOption)
             const val:{argNamesList:string[], computedValue:any} = computeValue(funcName, className, paramsChosenSoFarClone, mapInstanceNameToObject);
-            
-            /*console.log("val.computedValue: " + val.computedValue);
-            console.log("typeof val.computedValue: " + (typeof val.computedValue));
-            console.log("outputVarValue: " + outputVarValue);
-            console.log("tyepof outputVarValue: " + (typeof outputVarValue));*/
-            //if(val.computedValue === outputVarValue){
-            /*if(_.isEqual(val.computedValue, outputVarValue)){
-                console.log("equalToOutputVar");
-            }else{
-                console.log("notOutputVar");
-            }*/
             if(_.isEqual(val.computedValue, outputVarValue)){
                 validArgSets.push(paramsChosenSoFarClone);
             }
@@ -382,23 +396,15 @@ function recursiveCheckParamCombos(funcName:string, className:string, outputVarV
         // If matches, return string representation
     }else{ // If not last param to be chosen
         const optionsForThisParam = paramOptions[paramsChosenSoFar.length];
-        //console.log(optionsForThisParam);
-        //if(optionsForThisParam){
-            for(let i = 0; i < optionsForThisParam.length; i++){
-                const thisParamOption = optionsForThisParam[i];
-                const paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
-                paramsChosenSoFarClone.push(thisParamOption);
-                const recursiveCheckParamCombosResult = recursiveCheckParamCombos(funcName, className, outputVarValue, paramOptions, paramsChosenSoFarClone, mapInstanceNameToObject);
-                if(recursiveCheckParamCombosResult){
-                    validArgSets = validArgSets.concat(recursiveCheckParamCombosResult);
-                }/*else{
-                    //console.log(recursiveCheckParamCombosResult);
-                    return undefined;
-                }*/
+        for(let i = 0; i < optionsForThisParam.length; i++){
+            const thisParamOption = optionsForThisParam[i];
+            const paramsChosenSoFarClone = _.cloneDeep(paramsChosenSoFar);
+            paramsChosenSoFarClone.push(thisParamOption);
+            const recursiveCheckParamCombosResult = recursiveCheckParamCombos(funcName, className, outputVarValue, paramOptions, paramsChosenSoFarClone, mapInstanceNameToObject, paramsOptional);
+            if(recursiveCheckParamCombosResult){
+                validArgSets = validArgSets.concat(recursiveCheckParamCombosResult);
             }
-        //}/*else{
-            //return undefined;
-        //}*/
+        }
     }
     return validArgSets;
 }
