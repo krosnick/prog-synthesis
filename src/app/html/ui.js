@@ -8,7 +8,6 @@ $(document).ready(function() {
     $('#synthesizeButton').on('click', function(){
         selectedCode = window.getSelection().toString().trim();
         fullInputCode = monaco.editor.getModels()[0].getValue().toString().trim();
-        $("#origCode").html(selectedCode);
 
         getResults();
 
@@ -74,14 +73,22 @@ function putSolutionInVariableStatement(codeSolutionValue){
 }
 
 function addCodeSolutionsToDOM(results) {
+    emptyResultsArea();
+    
+    $("#origCode").html(selectedCode);
     var codeSolutions = results["codeSolutions"];
     //console.log(codeSolutions);
     //document.getElementById("results").innerHTML = results;
-    var btnGroup = $('<div class="btn-group-vertical btn-group-toggle" data-toggle="buttons" ></div>');
-    codeSolutions.forEach(function(solution, index){
-        btnGroup.append('<label class="btn btn-light btn-sm codeText"><input type="radio" name="options" id="solution_' + index + '" autocomplete="off">' + putSolutionInVariableStatement(solution) + '</label>');
-    });
-    $("#list_of_solutions").append(btnGroup);
+    if(codeSolutions.length > 0){
+        var btnGroup = $('<div class="btn-group-vertical btn-group-toggle" data-toggle="buttons" ></div>');
+        codeSolutions.forEach(function(solution, index){
+            btnGroup.append('<label class="btn btn-light btn-sm codeText"><input type="radio" name="options" id="solution_' + index + '" autocomplete="off">' + putSolutionInVariableStatement(solution) + '</label>');
+        });
+        $("#list_of_solutions").append(btnGroup);
+    }else{
+        $("#list_of_solutions").append("<div id='noSolutionsMessage'>There are no suggested solutions.</div>");
+    }
+
     $("#results").show();
 }
 // Callback function that updates the DOM once the post data (programSynthesis results) comes back
