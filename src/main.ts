@@ -9,8 +9,9 @@ import { type } from "os";
 const javascript_declaration_file = "./lib.d.ts";
 
 let transpiledInputFileContentsString;
-function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str:string]:string[]} {
-    
+//export function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str:string]:string[]} {
+export function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):string[]{
+
     // Get string of the code in the input file
     let inputFileContentsString = fs.readFileSync(fileNameRequiredInput, "utf8");
     transpiledInputFileContentsString = ts.transpileModule(inputFileContentsString,
@@ -160,20 +161,17 @@ function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str
         // search the DocEntry[]s for appropriate functions/classes/variables
 
 
-    const varToSolutionsMap = {};
-
-    // For each required output statement
-    /*outputFileContents.variableStatements.forEach(function(outputVar:DocEntry){
-        varToSolutionsMap[outputVar.name] = findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap);
-    });*/
-
+    /*const varToSolutionsMap = {};
     //console.log("beforeFindSolution");
     // for now, assume only 1 output var spec
     varToSolutionsMap[outputFileContents.variableStatements[0].name] = findSolution(outputFileContents.variableStatements[0], possibleMethodsAndVariables, variableTypeMap, possibleMethodsAndVariables["mapInstanceNameToObject"]);
     console.log("varToSolutionsMap");
-    console.log(varToSolutionsMap);
+    console.log(varToSolutionsMap);*/
 
-    return varToSolutionsMap;
+    const codeSolutions:string[] = findSolution(outputFileContents.variableStatements[0], possibleMethodsAndVariables, variableTypeMap, possibleMethodsAndVariables["mapInstanceNameToObject"]);
+
+    return codeSolutions;
+    //return varToSolutionsMap;
 }
 
 function addInheritedMethodsPropertiesToNativeJSVariables(jsAndWebAPIVariableStatements, jsAndWebAPIInterfaceDeclarations){

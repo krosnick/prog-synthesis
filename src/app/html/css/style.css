@@ -28,3 +28,13 @@
 	position: relative;
 }
 */
+
+.component {
+	border-bottom: solid gray 1px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+#results {
+	display: none;
+}
