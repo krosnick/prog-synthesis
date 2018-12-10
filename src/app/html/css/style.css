@@ -7,13 +7,6 @@
 	position: absolute;
 }
 
-#synthesize {
-	background: blue;
-	float: right;
-	display: inline-block;
-	position: relative;
-}
-
 #results {
 	background: green;
 	float: right;
@@ -47,4 +40,12 @@
 	font-family: Menlo, Monaco, "Courier New", monospace;
     font-weight: normal;
     font-size: 12px !important;
+}
+
+#results {
+	background: #f3f2f2;
+}
+
+#closeButton {
+	float: right;
 }

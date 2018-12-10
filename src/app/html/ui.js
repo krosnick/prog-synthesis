@@ -11,11 +11,13 @@ $(document).ready(function() {
         $("#origCode").html(selectedCode);
 
         getResults();
+
+        $('#replaceButton').prop('disabled', true);
     });
     $("#results").on("click", ".btn", function(e){
         $("#results .btn").removeClass("active");
         $(event.target).parent(".btn").addClass("active");
-        // Should 
+        $('#replaceButton').prop('disabled', false);
     });
 
     $("#replaceButton").on("click", function(){
@@ -23,15 +25,24 @@ $(document).ready(function() {
         console.log(selectedOutput);
         replaceCodeSolutionInEditor(selectedOutput);
 
-        // Clear list of solutions
-        $("#list_of_solutions").empty();
-        // Clear orig code
-        $("#origCode").empty();
+        emptyResultsArea();
+    });
 
-        // Hide results
-        $("#results").hide();
+    $("#closeButton").on("click", function(){
+        emptyResultsArea();
     });
 });
+
+function emptyResultsArea(){
+    // Clear list of solutions
+    $("#list_of_solutions").empty();
+    // Clear orig code
+    $("#origCode").empty();
+
+    // Hide results
+    $("#results").hide();
+    $('#replaceButton').prop('disabled', true);
+}
 
 function getResults() {
 //     // This is how to get all the contents of the editor:
