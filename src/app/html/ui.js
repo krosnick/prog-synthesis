@@ -79,14 +79,17 @@ function addCodeSolutionsToDOM(results) {
     var codeSolutions = results["codeSolutions"];
     //console.log(codeSolutions);
     //document.getElementById("results").innerHTML = results;
-    if(codeSolutions.length > 0){
+    if(!codeSolutions){
+        $("#list_of_solutions").append("<div id='noSolutionsMessage'>Invalid code selection. Please select a variable statement.</div>");
+    }else if(codeSolutions.length === 0){
+        $("#list_of_solutions").append("<div id='noSolutionsMessage'>There are no suggested solutions.</div>");
+    }else if(codeSolutions.length > 0){
         var btnGroup = $('<div class="btn-group-vertical btn-group-toggle" data-toggle="buttons" ></div>');
         codeSolutions.forEach(function(solution, index){
             btnGroup.append('<label class="btn btn-light btn-sm codeText"><input type="radio" name="options" id="solution_' + index + '" autocomplete="off">' + putSolutionInVariableStatement(solution) + '</label>');
         });
         $("#list_of_solutions").append(btnGroup);
-    }else{
-        $("#list_of_solutions").append("<div id='noSolutionsMessage'>There are no suggested solutions.</div>");
+    }else{   
     }
 
     $("#results").show();
