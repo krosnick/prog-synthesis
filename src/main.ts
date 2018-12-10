@@ -692,6 +692,6 @@ function getParameterOptions(funcDocEntry:DocEntry, variableTypeMap):({name:stri
 /*const inputArgs:string[] = process.argv;
 const fileNameRequiredInput:string = inputArgs.slice(2, 3)[0];
 const fileNameRequiredOutput:string = inputArgs.slice(3)[0];*/
-const fileNameRequiredInput:string = "./data/exampleInput.ts";
+/*const fileNameRequiredInput:string = "./data/exampleInput.ts";
 const fileNameRequiredOutput:string = "./data/exampleOutput.ts";
-main(fileNameRequiredInput, fileNameRequiredOutput);
+main(fileNameRequiredInput, fileNameRequiredOutput);*/
