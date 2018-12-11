@@ -55,19 +55,11 @@ const numToWord:{[num:number]:string} = {1: "one", 2: "two", 3: "three"};
 const byeVar:string = 'bye';
 const numVar:number = 1001;
 const myArr:number[] = [1,5,3,7];
-<<<<<<< HEAD
-// const myClass:C = new C("hello");
-const myDate:Date = new Date();
-=======
 //const myDate:Date = new Date();
 const myClass:C = new C("hello");
 const num2:number = 2;
 const num3:number = 3;
-<<<<<<< HEAD
->>>>>>> bf5eff7e5af18cd1dc61a1b993617b021a883ad7
-=======
 const stringNumFive:string = "5";
->>>>>>> b77e3866ff992d04ea5f6f1317929dc94a7af9ab
 
 function addTwoNumbers(a:number, b:number) { return a + b; };
 function returnKeys(dict:{ [num:number]:string }, str:string) { return Object.keys(dict); };

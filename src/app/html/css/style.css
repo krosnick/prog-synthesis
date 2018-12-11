@@ -28,3 +28,23 @@
 	position: relative;
 }
 */
+
+.component {
+	border-bottom: solid gray 1px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+.innerComponent {
+	padding-bottom: 10px;
+}
+
+#results {
+	display: none;
+}
+
+.codeText {
+	font-family: Menlo, Monaco, "Courier New", monospace;
+    font-weight: normal;
+    font-size: 12px !important;
+}

@@ -8,6 +8,7 @@ var fs = require("fs");
 //const nonStrictEval = require('./nonStrictEval');
 var javascript_declaration_file = "./lib.d.ts";
 var transpiledInputFileContentsString;
+//export function main(fileNameRequiredInput:string, fileNameRequiredOutput:string):{[str:string]:string[]} {
 function main(fileNameRequiredInput, fileNameRequiredOutput) {
     // Get string of the code in the input file
     var inputFileContentsString = fs.readFileSync(fileNameRequiredInput, "utf8");
@@ -135,18 +136,17 @@ function main(fileNameRequiredInput, fileNameRequiredOutput) {
     // Save global variables (e.g., window) as DocEntry[]
     // For the desired output type and the input types available,
     // search the DocEntry[]s for appropriate functions/classes/variables
-    var varToSolutionsMap = {};
-    // For each required output statement
-    /*outputFileContents.variableStatements.forEach(function(outputVar:DocEntry){
-        varToSolutionsMap[outputVar.name] = findSolution(outputVar, possibleMethodsAndVariables, variableTypeMap);
-    });*/
+    /*const varToSolutionsMap = {};
     //console.log("beforeFindSolution");
     // for now, assume only 1 output var spec
     varToSolutionsMap[outputFileContents.variableStatements[0].name] = findSolution(outputFileContents.variableStatements[0], possibleMethodsAndVariables, variableTypeMap, possibleMethodsAndVariables["mapInstanceNameToObject"]);
     console.log("varToSolutionsMap");
-    console.log(varToSolutionsMap);
-    return varToSolutionsMap;
+    console.log(varToSolutionsMap);*/
+    var codeSolutions = findSolution(outputFileContents.variableStatements[0], possibleMethodsAndVariables, variableTypeMap, possibleMethodsAndVariables["mapInstanceNameToObject"]);
+    return codeSolutions;
+    //return varToSolutionsMap;
 }
+exports.main = main;
 function addInheritedMethodsPropertiesToNativeJSVariables(jsAndWebAPIVariableStatements, jsAndWebAPIInterfaceDeclarations) {
     jsAndWebAPIVariableStatements.forEach(function (variableStatement) {
         var variableType = variableStatement.type;
@@ -602,6 +602,6 @@ function getParameterOptions(funcDocEntry, variableTypeMap) {
 /*const inputArgs:string[] = process.argv;
 const fileNameRequiredInput:string = inputArgs.slice(2, 3)[0];
 const fileNameRequiredOutput:string = inputArgs.slice(3)[0];*/
-var fileNameRequiredInput = "./data/exampleInput.ts";
-var fileNameRequiredOutput = "./data/exampleOutput.ts";
-main(fileNameRequiredInput, fileNameRequiredOutput);
+/*const fileNameRequiredInput:string = "./data/exampleInput.ts";
+const fileNameRequiredOutput:string = "./data/exampleOutput.ts";
+main(fileNameRequiredInput, fileNameRequiredOutput);*/ 

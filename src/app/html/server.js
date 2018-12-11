@@ -3,9 +3,9 @@ var path = require('path');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var fs = require('fs');
+//var fs = require('fs');
 var outputFileSync = require('output-file-sync');
-var main = require('../../main');
+var synthesize = require('../../main');
 
 var app = express();
 
@@ -23,8 +23,20 @@ app.get('/',function(req,res){
 });
 
 app.post('/user_input',function(req,res) {
-	console.log("WE ON THE SERVER ABOUT TO RUN")
-	outputFileSync('exampleInput.ts', Object.keys(req.body)[0]);
+
+	//console.log("WE ON THE SERVER ABOUT TO RUN")
+	//outputFileSync('exampleInput.ts', Object.keys(req.body)[0]);
+	outputFileSync('exampleInput.ts', req.body.providedInput);
+	outputFileSync('exampleOutput.ts', req.body.desiredOutput);
+
+	// Call synthesize on these
+	var codeSolutions = synthesize.main('exampleInput.ts', 'exampleOutput.ts');
+	//console.log(codeSolutions);
+
+	// Send results back to client
+	res.json({
+		"codeSolutions": codeSolutions
+	});
 });
 // app.get('/currentData',function(req,res){
 // 	res.json({
