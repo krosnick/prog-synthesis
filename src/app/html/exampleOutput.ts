@@ -1,1 +1,1 @@
-const out:number = 8;
+const outputNum:number = 5;

@@ -6,6 +6,27 @@ var nonStrictEval_1 = require("./nonStrictEval");
 ;
 var inputFileContentsString;
 var isDeclarationFile;
+function isVariableStatement(fileNames, options) {
+    var program = ts.createProgram(fileNames, options);
+    var checker = program.getTypeChecker();
+    var isVarStatement = true;
+    for (var _i = 0, _a = program.getSourceFiles(); _i < _a.length; _i++) {
+        var sourceFile = _a[_i];
+        isDeclarationFile = sourceFile.isDeclarationFile;
+        if (!sourceFile.isDeclarationFile) {
+            // Walk the tree to search for nodes (classes, variable statements, etc)
+            ts.forEachChild(sourceFile, function (node) {
+                //console.log(node);
+                //console.log(ts.SyntaxKind[node.kind]);
+                if (!(node.kind === ts.SyntaxKind.VariableStatement || node.kind === ts.SyntaxKind.EndOfFileToken)) {
+                    isVarStatement = false;
+                }
+            });
+        }
+    }
+    return isVarStatement;
+}
+exports.isVariableStatement = isVariableStatement;
 /** Generate documentation for all classes in a set of .ts files */
 function getDocEntrys(fileNames, options, checkDeclarationFiles, inputFileContents) {
     inputFileContentsString = inputFileContents;

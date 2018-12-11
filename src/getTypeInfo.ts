@@ -36,6 +36,28 @@ export interface FileContents{
 let inputFileContentsString:string;
 let isDeclarationFile;
 
+export function isVariableStatement(fileNames: string[],
+  options: ts.CompilerOptions): boolean {
+  let program = ts.createProgram(fileNames, options);
+  let checker = program.getTypeChecker();
+
+  let isVarStatement:boolean = true;
+  for (const sourceFile of program.getSourceFiles()) {
+    isDeclarationFile = sourceFile.isDeclarationFile;
+    if(!sourceFile.isDeclarationFile){
+      // Walk the tree to search for nodes (classes, variable statements, etc)
+      ts.forEachChild(sourceFile, function(node: ts.Node){
+        //console.log(node);
+        //console.log(ts.SyntaxKind[node.kind]);
+        if(!(node.kind === ts.SyntaxKind.VariableStatement || node.kind === ts.SyntaxKind.EndOfFileToken)){
+          isVarStatement = false;
+        }
+      });
+    }
+  }
+  return isVarStatement;
+}
+
 /** Generate documentation for all classes in a set of .ts files */
 export function getDocEntrys(
   fileNames: string[],

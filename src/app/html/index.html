@@ -18,10 +18,11 @@
 		<div class="col">
 			<div id="container" style="width:800px;height:600px;border:1px solid grey"></div>
 		</div>
-		<div class="col">
+		<div class="col-3">
 			<div id="synthesize" class="component">
 				<button id="synthesizeButton" type="button" class="btn btn-primary btn-lg">Synthesize</button>
 				<div id="results">
+					<button id="closeButton" type="button" class="btn btn-outline-dark btn-sm">x</button>
 					<div id="origCodeContainer" class="innerComponent">
 						<div><i>Original Code</i></div>
 						<div id="origCode" class="codeText"></div>
@@ -36,13 +37,12 @@
 							Replace
 						</button>
 					</div>-->
-					<button id="replaceButton" type="button" class="btn btn-secondary btn-sm">Replace in editor</button>
+					<button id="replaceButton" type="button" class="btn btn-secondary btn-sm" disabled>Replace in editor</button>
 				</div>
 			</div>
-			<div id="run" onclick="runProgram();" class="component">
-				<button type="button">
-					Run
-				</button>
+			<!---<div id="run" onclick="runProgram();" class="component">-->
+			<div id="run" class="component">
+				<button id="runButton" type="button" class="btn btn-success btn-sm">Run code</button>
 				<!----<div id="program">Program Output</div>-->
 			</div>
 			<!-- <div id="console">Console Output?</div> -->
