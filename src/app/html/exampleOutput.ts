@@ -1,1 +1,1 @@
-const outputNum:number = 5;
+const f:number = 5;

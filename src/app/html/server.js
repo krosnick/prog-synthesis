@@ -30,7 +30,13 @@ app.post('/user_input',function(req,res) {
 	outputFileSync('exampleOutput.ts', req.body.desiredOutput);
 
 	// Call synthesize on these
+	var d = new Date();
+	var startTime = d.getTime();
 	var codeSolutions = synthesize.main('exampleInput.ts', 'exampleOutput.ts');
+	var d2 = new Date();
+	var timeElapsed = d2.getTime() - startTime;
+	console.log("timeElapsed");
+	console.log(timeElapsed);
 	//console.log(codeSolutions);
 
 	// Send results back to client
