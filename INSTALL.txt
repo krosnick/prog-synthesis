@@ -1,0 +1,15 @@
+0. Install homebrew for Mac (taken from https://brew.sh/)
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+1. Install Node and npm
+# Mac
+brew install node
+
+# Other systems follow the links below
+Node: Go to https://nodejs.org/en/download/ and download the source code for your system
+npm: https://www.npmjs.com/get-npm
+
+2. Install dependencies
+npm install .
+
+Now you should be ready to move on to the README.txt for instructions on how to run the program

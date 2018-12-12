@@ -6,11 +6,8 @@
   "scripts": {},
   "author": "",
   "dependencies": {
-<<<<<<< HEAD
     "monaco-editor": "^0.15.6",
-=======
     "lodash": "^4.17.11",
->>>>>>> bf5eff7e5af18cd1dc61a1b993617b021a883ad7
     "typescript": "^2.9.2"
   },
   "devDependencies": {
